@@ -1,0 +1,11 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "bluecove-2.1.1-SNAPSHOT.jar",
+        "bluecove-2.1.0.jar",
+        "Connectivity/bluecove-2.1.0.jar"
+    ],
+    "java.project.sourcePaths": [
+        "."
+    ]
+}

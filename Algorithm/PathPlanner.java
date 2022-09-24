@@ -1,5 +1,6 @@
 package Algorithm;
 
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -41,7 +42,7 @@ public class PathPlanner {
             DubinsPath DPObject = DubinsPathDriver.bestDPObject(sx, sy, syaw, ex, ey, eyaw, turning_radius);
             Object[][] tempDP = DubinsPathDriver.bestDPPath(sx, sy, syaw, ex, ey, eyaw, turning_radius);
 
-            // check if the dubins path is valid
+            // check if the dubins path between two nodes is valid
             boolean gotClash = false;
             for (Object[] dubinStep : tempDP) {
                 if (arena.entityClash(
@@ -72,99 +73,102 @@ public class PathPlanner {
 
                 // --- check if a dubins path is possible by moving the robot backwards ---//
                 // move robot backwards to a reasonable distance
-                int reversedAmt = 0;
-                int[] revPos = moveBackTo(arena, (int) sx, (int) sy, ((Number) visitingOrder[step][2]).intValue(),
-                        reversedAmt);
-                DubinsPath testDPObject = DubinsPathDriver.bestDPObject(
-                        (double) revPos[0], (double) revPos[1], syaw, ex, ey, eyaw, turning_radius);
-                Object[][] testDP = DubinsPathDriver.bestDPPath((double) revPos[0], (double) revPos[1], syaw, ex, ey,
-                        eyaw, turning_radius);
-                // check if there exists dubins path is valid after reversing
-                gotClash = false;
-                for (Object[] dubinStep : testDP) {
-                    if (arena.entityClash(
-                            new int[] { ((Number) dubinStep[0]).intValue(), ((Number) dubinStep[1]).intValue() })) {
-                        gotClash = true;
-                        break;
+                int maxReverse = 10;
+                boolean altPathFound = false;
+                // reverse -> check any clash -> no clash -> test dubins -> check clash
+                for (int reverse = 1; reverse < maxReverse + 1; reverse++) {
+                    double testX = sx, testY = sy;
+                    switch (((Number) visitingOrder[step][2]).intValue()) {
+                        case 0:
+                            testX = testX - reverse;
+                            break;
+                        case 90:
+                            testY = testY - reverse;
+                            break;
+                        case 180:
+                            testX = testX + reverse;
+                            break;
+                        case 270:
+                            testY = testY + reverse;
+                            break;
+                        default:
                     }
-                }
-                if (!gotClash) {
-                    for (Object[] dubinStep : testDP) {
-                        Object[] toAdd = new Object[] { dubinStep[0], dubinStep[1], dubinStep[2], " " };
-                        verbosePath.add(toAdd);
-                    }
-                    String s0 = "Reverse";
-                    String s1 = typeToInstr(testDPObject.getPathType())[0];
-                    String s2 = typeToInstr(testDPObject.getPathType())[1];
-                    String s3 = typeToInstr(testDPObject.getPathType())[2];
-                    double l0 = reversedAmt;
-                    double l1 = arcToAngle(testDPObject.getSegmentLength(0), turning_radius);
-                    double l2 = s2 == "S" ? testDPObject.getSegmentLength(1)
-                            : arcToAngle(testDPObject.getSegmentLength(1), turning_radius);
-                    double l3 = arcToAngle(testDPObject.getSegmentLength(2), turning_radius);
-                    robotInstructions.add(String.format("%s-%s", s0, l0));
-                    robotInstructions.add(String.format("%s-%s", s1, l1));
-                    robotInstructions.add(String.format("%s-%s", s2, l2));
-                    robotInstructions.add(String.format("%s-%s", s3, l3));
-                }
+                    // there is no entity clash during reversing
+                    if (!arena.entityClash(new int[] { (int) testX, (int) testY })) {
+                        DubinsPath testDPObject = DubinsPathDriver.bestDPObject(testX, testY, syaw, ex, ey, eyaw,
+                                turning_radius);
+                        Object[][] testDP = DubinsPathDriver.bestDPPath(testX, testY, syaw, ex, ey, eyaw,
+                                turning_radius);
 
-                // if still got clash after reversing
-                if (gotClash) {
+                        // check if there exists dubins path is valid after reversing
+                        gotClash = false;
+                        for (Object[] dubinStep : testDP) {
+                            if (arena.entityClash(
+                                    new int[] { ((Number) dubinStep[0]).intValue(),
+                                            ((Number) dubinStep[1]).intValue() })) {
+                                gotClash = true;
+                                break;
+                            }
+                        }
+                        // if there is a clash...
+                        if (gotClash) {
+                            // attempt manhattan distance
+                            // robot to follow manhattan distance
+                            Manhattan manhattan = new Manhattan();
+                            Object[][] mPath = manhattan.manhattan(arena, (int) testX, (int) testY, (int) ex, (int) ey);
+                            double curYaw = syaw;
+                            for (int mStep = 0; mStep < mPath.length - 1; mStep++) {
+                                double subSX = ((Number) mPath[mStep][0]).doubleValue();
+                                double subSY = ((Number) mPath[mStep][1]).doubleValue();
+                                double subEX = ((Number) mPath[mStep + 1][0]).doubleValue();
+                                double subEY = ((Number) mPath[mStep + 1][1]).doubleValue();
+                                String action = turn(subSX, subSY, curYaw, subEX, subEY);
+                                double value = action == "S" ? 1 : 90;
+                                robotInstructions.add(String.format("%s-%s", action, value));
+                            }
+                            altPathFound = true;
 
-                    // reverse (add to path)
-                    String s0 = "Reverse";
-                    double l0 = reversedAmt;
-                    // robotInstructions.add(String.format("%s-%s", s0, l0));
-
-                    // deploy manhattan path starting from reversed position
-                    Manhattan manhattan = new Manhattan();
-                    Object[][] manPath = manhattan.manhattan(arena, (int) revPos[0], (int) revPos[1], (int) ex,
-                            (int) ey);
-
-                    // for every step in the manhattan path
-                    int forward = 0;
-                    for (int mStep = 1; mStep < manPath.length - 2; mStep++) {
-                        int startX = ((Number) manPath[mStep][0]).intValue();
-                        int startY = ((Number) manPath[mStep][1]).intValue();
-                        int startDir = ((Number) visitingOrder[step][2]).intValue();
-                        int endX = ((Number) manPath[mStep + 2][0]).intValue();
-                        int endY = ((Number) manPath[mStep + 2][1]).intValue();
-
-                        String instruction;
-                        if (endX > startX & endY > startY) {
-                            instruction = startDir == 0 ? "L" : "R";
-                        } else if (endX > startX & endY < startY) {
-                            instruction = startDir == 0 ? "R" : "L";
-                        } else if (endX < startX & endY > startY) {
-                            instruction = startDir == 180 ? "R" : "L";
-                        } else if (endX < startX & endY < startY) {
-                            instruction = startDir == 180 ? "L" : "R";
                         } else {
-                            // if the robot just going forward, continue with the loop
-                            forward++;
-                            continue;
+                            // if there is no clash of the dubins path
+                            for (Object[] dubinStep : testDP) {
+                                Object[] toAdd = new Object[] { dubinStep[0], dubinStep[1], dubinStep[2], " " };
+                                verbosePath.add(toAdd);
+                            }
+                            altPathFound = true;
+                            System.out.println("Found");
+                            // adding the reverse action
+                            String rev = "Reverse";
+                            double revAmt = reverse;
+                            robotInstructions.add(String.format("%s-%s", rev, revAmt));
+                            // adding the first segment
+                            String s1 = typeToInstr(testDPObject.getPathType())[0];
+                            double l1 = arcToAngle(testDPObject.getSegmentLength(0), turning_radius);
+                            robotInstructions.add(String.format("%s-%s", s1, l1));
+                            // 2nd segment
+                            String s2 = typeToInstr(testDPObject.getPathType())[1];
+                            double l2 = s2 == "S" ? testDPObject.getSegmentLength(1)
+                                    : arcToAngle(testDPObject.getSegmentLength(1), turning_radius);
+                            robotInstructions.add(String.format("%s-%s", s2, l2));
+                            // 3rd segment
+                            String s3 = typeToInstr(testDPObject.getPathType())[2];
+                            double l3 = arcToAngle(testDPObject.getSegmentLength(2), turning_radius);
+                            robotInstructions.add(String.format("%s-%s", s3, l3));
                         }
 
-                        // if there is a turn detected
-                        // add the forward instruction to the path
-                        robotInstructions.add(String.format("%s-%s", "S", forward));
-                        forward = 0; // reset forward
-                        robotInstructions.add(String.format("%s-%s", instruction, 90));
-
                     }
-
-                    for (Object[] mStep : manPath) {
-                        mStep[2] = 0;
-                        // verbosePath.add(mStep);
+                    // here we go again with the conditional nesting
+                    // if an altpath has been found, great! we can continue the traversring to the
+                    // next node
+                    if (altPathFound) {
+                        break;
                     }
 
                 }
 
             }
-
         }
 
-        System.out.println(Arrays.deepToString(visitingOrder));
+        // System.out.println(Arrays.deepToString(visitingOrder));
         System.out.println();
         System.out.println();
         // System.out.println(robotInstructions);
@@ -176,7 +180,7 @@ public class PathPlanner {
          * output[i][3] = "SCAN";
          * }
          */
-        System.out.println(Arrays.deepToString(output));
+        // System.out.println(Arrays.deepToString(output));
         // System.out.println(robotInstructions);
         for (Object instro : robotInstructions) {
             System.out.println(instro);
@@ -186,51 +190,9 @@ public class PathPlanner {
     }
 
     private static int[] moveBackTo(Arena arena, int x, int y, int degrees, int reversedAmt) {
-        int maxReverse = 5;
+        int maxReverse = 10;
         int newX = x, newY = y;
-        switch (degrees) {
-            case 0:
-                for (int i = 1; i < maxReverse + 1; i++) {
-                    if (!arena.entityClash(new int[] { x - i, y })) {
-                        newX--;
-                    } else {
-                        return new int[] { newX, newY };
-                    }
-                    reversedAmt = i;
-                }
-                break;
-            case 90:
-                for (int i = 1; i < maxReverse + 1; i++) {
-                    if (!arena.entityClash(new int[] { x, y - i })) {
-                        newY--;
-                    } else {
-                        return new int[] { newX, newY };
-                    }
-                    reversedAmt = i;
-                }
-                break;
-            case 180:
-                for (int i = 1; i < maxReverse + 1; i++) {
-                    if (!arena.entityClash(new int[] { x + i, y })) {
-                        newX++;
-                    } else {
-                        return new int[] { newX, newY };
-                    }
-                    reversedAmt = i;
-                }
-                break;
-            case 270:
-                for (int i = 1; i < maxReverse + 1; i++) {
-                    if (!arena.entityClash(new int[] { x, y + i })) {
-                        newY++;
-                    } else {
-                        return new int[] { newX, newY };
-                    }
-                    reversedAmt = i;
-                }
-                break;
-            default:
-        }
+
         return new int[] { newX, newY };
     }
 
@@ -255,5 +217,40 @@ public class PathPlanner {
             default:
         }
         return new String[] {};
+    }
+
+    private static String turn(double sx, double sy, double syaw, double ex, double ey) {
+        switch ((int) syaw) {
+            case 0:
+                if (ex > sx & ey > sy) {
+                    return "L";
+                } else if (ex > sx & ey < sy) {
+                    return "R";
+                }
+                break;
+            case 90:
+                if (ex > sx & ey > sy) {
+                    return "R";
+                } else if (ex < sx & ey > sy) {
+                    return "L";
+                }
+                break;
+            case 180:
+                if (ex < sx & ey < sy) {
+                    return "L";
+                } else if (ex < sx & ey > sy) {
+                    return "R";
+                }
+                break;
+            case 270:
+                if (ex > sx & ey < sy) {
+                    return "L";
+                } else if (ex < sx & ey < sy) {
+                    return "R";
+                }
+                break;
+            default:
+        }
+        return "S";
     }
 }

@@ -21,7 +21,9 @@ public class Main {
     // 16\n15 4 90 34\n0 19 270 22";
     // PathPlanner.gridPath(configFile);
 
-    AlgoConnect.connect();
+    // AlgoConnect.pairDevice();
+    // MyDiscoveryListener.testConnect();
+    RemoteBluetoothServer.remoteBluetoothServer();
 
   }
 

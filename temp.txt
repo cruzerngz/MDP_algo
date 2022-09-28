@@ -1,0 +1,103 @@
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class DubinsPath {
+    private double mod2pi(double theta) {
+        return theta - 2.0 * Math.PI * Math.floor(theta / 2.0 / Math.PI);
+    }
+
+    private double pi_2_pi(double angle) {
+        while (angle >= Math.PI) {
+            angle = angle - 2.0 * Math.PI;
+        }
+
+        while (angle <= -Math.PI) {
+            angle = angle + 2.0 * Math.PI;
+        }
+
+        return angle;
+    }
+
+    public List<List<Object>> dubins_path(double sx, double sy, double syaw, double ex, double ey, double eyaw,
+            double radius) {
+        ex = ex - sx;
+        ey = ey - sy;
+        double lex = Math.cos(syaw) * ex + Math.sin(syaw) * ey;
+        double ley = -Math.sin(syaw) * ex + Math.cos(syaw) * ey;
+        double leyaw = eyaw - syaw;
+        double distance = Math.sqrt(Math.pow(lex, 2) + Math.pow(ley, 2));
+        double d = distance / radius;
+
+        double theta = mod2pi(Math.atan2(ley, lex));
+        double alpha = mod2pi(theta);
+        double beta = mod2pi(leyaw - theta);
+
+        double bcost = Double.MAX_VALUE;
+
+        double bt = Double.MAX_VALUE;
+        double bp = Double.MAX_VALUE;
+        double bq = Double.MAX_VALUE;
+        String bmode = null;
+
+        /*
+         * for (String planner : planners) {
+         * // need to know the return types of general planner
+         * // I think object type is best
+         * Object[] solution = general_planner(planner, alpha, beta, d);
+         * 
+         * if (solution == null) {
+         * continue;
+         * }
+         * 
+         * double[] path = (double[]) solution[0];
+         * String mode = (String) solution[1];
+         * double cost = (double) solution[2];
+         * double t = path[0];
+         * double p = path[1];
+         * double q = path[2];
+         * if (bcost > cost) {
+         * bt = t;
+         * bp = p;
+         * bq = q;
+         * bmode = mode;
+         * bcost = cost;
+         * }
+         * 
+         * }
+         */
+
+        List<List<Object>> toBeZipped = new ArrayList<List<Object>>(
+                List.of(
+                        List.of(bmode.charAt(0),
+                                bmode.charAt(1),
+                                bmode.charAt(2)),
+                        List.of(bt * radius, bp * radius, bq * radius),
+                        List.of(radius, radius, radius)));
+
+        return zip(toBeZipped); // returns ((left/right, arclength/distance, turnradius), (left/right/straight,
+                                // arclength/distance, turnradius), (left/right, arclength/distance,
+                                // turnradius))
+
+    }
+
+    private Object[] general_planner(String planner, double alpha, double beta, double d) {
+        return null;
+    }
+
+    public static List<List<Object>> zip(List<List<Object>> lists) {
+        List<List<Object>> zipped = new ArrayList<List<Object>>();
+        for (List<Object> list : lists) {
+            for (int i = 0, listSize = list.size(); i < listSize; i++) {
+                List<Object> list2;
+                if (i >= zipped.size()) {
+                    zipped.add(list2 = new ArrayList<Object>());
+                } else {
+                    list2 = zipped.get(i);
+                }
+                list2.add(list.get(i));
+            }
+        }
+        return zipped;
+    }
+}

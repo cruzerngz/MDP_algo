@@ -1,37 +1,15 @@
-package micycle.dubinscurves;
+package Algorithm;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.print.DocPrintJob;
 
-import Algorithm.Manhattan;
 import Arena.Arena;
+import micycle.dubinscurves.DubinsPath;
+import micycle.dubinscurves.DubinsPathType;
 
 public class DubinsPathDriver {
-
-    public static Object[][] gridPath(double sx, double sy, double syaw, double ex, double ey, double eyaw,
-            double turning_radius) {
-        double sample_step_size = 1;
-        double q0[] = { sx, sy, syaw }; // initial configuration
-        double q1[] = { ex, ey, eyaw }; // terminating configuration
-        DubinsPath path = new DubinsPath(q0, q1, turning_radius);
-
-        ArrayList<Object[]> output = new ArrayList<Object[]>();
-
-        path.sampleMany(sample_step_size, (double[] q, double t) -> {
-            double dubinDir = Math.floor(q[2] * (180 / Math.PI));
-            output.add(new Object[] { Math.floor(q[0]), Math.floor(q[1]), dubinDir });
-            return 0;
-        });
-
-        // System.out.println(Arrays.deepToString(adj));
-
-        Object[][] dubinsPath = new Object[output.size()][4];
-        dubinsPath = output.toArray(dubinsPath);
-
-        return dubinsPath;
-    }
 
     public static Object[][] gridPath(double sx, double sy, double syaw, double ex, double ey, double eyaw,
             double turning_radius, DubinsPathType pathType) {
@@ -47,8 +25,6 @@ public class DubinsPathDriver {
             output.add(new Object[] { Math.floor(q[0]), Math.floor(q[1]), dubinDir });
             return 0;
         });
-
-        // System.out.println(Arrays.deepToString(adj));
 
         Object[][] dubinsPath = new Object[output.size()][4];
         dubinsPath = output.toArray(dubinsPath);
@@ -64,7 +40,7 @@ public class DubinsPathDriver {
         return path;
     }
 
-    public static DubinsPath bestDPObject(double sx, double sy, double syaw, double ex, double ey, double eyaw,
+    public static Object[] dubinsPathInst(double sx, double sy, double syaw, double ex, double ey, double eyaw,
             double turning_radius) {
         DubinsPathType[] pathTypes;
         // check if next node is...
@@ -94,10 +70,22 @@ public class DubinsPathDriver {
         DubinsPath DPObject = DubinsPathDriver.pathObject(sx, sy, syaw, ex, ey, eyaw, turning_radius,
                 pathTypes[index]);
 
-        return DPObject;
+        String[] paths = typeToInstr(pathTypes[index]);
+        Object[] returnObject = { paths[0], DPObject.getSegmentLength(0),
+                paths[1], DPObject.getSegmentLength(1),
+                paths[2], DPObject.getSegmentLength(2)
+        };
+
+        returnObject[1] = arcToAngle(DPObject.getSegmentLength(0), turning_radius);
+        returnObject[5] = arcToAngle(DPObject.getSegmentLength(2), turning_radius);
+        if (paths[1] != "S") {
+            returnObject[2] = arcToAngle(DPObject.getSegmentLength(1), turning_radius);
+        }
+
+        return returnObject;
     }
 
-    public static Object[][] bestDPPath(double sx, double sy, double syaw, double ex, double ey, double eyaw,
+    public static Object[][] dubinsPathGrid(double sx, double sy, double syaw, double ex, double ey, double eyaw,
             double turning_radius) {
         DubinsPathType[] pathTypes;
         // check if next node is...
@@ -125,5 +113,28 @@ public class DubinsPathDriver {
         }
         Object[][] tempDP = DubinsPathDriver.gridPath(sx, sy, syaw, ex, ey, eyaw, turning_radius, pathTypes[index]);
         return tempDP;
+    }
+
+    private static String[] typeToInstr(DubinsPathType pathType) {
+        switch (pathType) {
+            case LRL:
+                return new String[] { "L", "R", "L" };
+            case RLR:
+                return new String[] { "R", "L", "R" };
+            case LSL:
+                return new String[] { "L", "S", "L" };
+            case LSR:
+                return new String[] { "L", "S", "R" };
+            case RSL:
+                return new String[] { "R", "S", "L" };
+            case RSR:
+                return new String[] { "R", "S", "R" };
+            default:
+        }
+        return new String[] {};
+    }
+
+    private static double arcToAngle(double arcLength, double radius) {
+        return (arcLength / radius) * 180 / Math.PI;
     }
 }

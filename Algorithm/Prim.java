@@ -78,15 +78,18 @@ public class Prim {
         Object[][] returnVisitingOrder = new Object[visitingOrder.size()][3];
         int index = 0;
         for (Entity entity : visitingOrder) {
+            int id = -1;
             if (entity.getType() == Type.ROBOT) {
                 returnVisitingOrder[index] = new Object[] { entity.getCoords()[0], entity.getCoords()[1],
-                        entity.getDirection().getDegree() };
+                        entity.getDirection().getDegree(), id };
             } else {
                 int obstacleDir = entity.getDirection().getDegree();
                 int robotToFace = obstacleDir == 0 ? 180 : obstacleDir == 90 ? 270 : obstacleDir == 180 ? 0 : 90;
 
                 int safeX = ((Obstacle) entity).getSafeCoords()[0];
                 int safeY = ((Obstacle) entity).getSafeCoords()[1];
+
+                id = ((Obstacle) entity).getPictureId();
 
                 // int safeX = SetupArena.getClosestValidPosition(arena, (Obstacle) entity)[0];
                 // int safeY = SetupArena.getClosestValidPosition(arena, (Obstacle) entity)[1];
@@ -104,7 +107,7 @@ public class Prim {
                  * }
                  */
 
-                returnVisitingOrder[index] = new Object[] { safeX, safeY, robotToFace };
+                returnVisitingOrder[index] = new Object[] { safeX, safeY, robotToFace, id };
             }
             index++;
         }

@@ -17,9 +17,12 @@ public class Main {
 
     // String configFile = "1 1 90\n5 7 270 17";
     String configFile = "1 1 90\n5 7 270 17\n5 13 180 35\n12 9 0 31\n15 15 270 16\n15 4 90 34\n0 19 270 22";
-    PathPlanner.gridPath(configFile);
 
-    // AlgoServer.algoServer();
+    AlgoServer.algoServer("192.168.10.147", 51758);
+
+    Object[] out = PathPlanner.gridPath(configFile);
+
+    // System.out.println(Arrays.toString(out));
 
   }
 

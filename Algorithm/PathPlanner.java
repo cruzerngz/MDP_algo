@@ -13,7 +13,7 @@ public class PathPlanner {
 
     static Object[][] visitingOrder;
 
-    public static Object[][] gridPath(String configFile) {
+    public static Object[] gridPath(String configFile) {
 
         // convert configfile into arena
         Arena arena = SetupArena.setupArena(configFile);
@@ -26,7 +26,7 @@ public class PathPlanner {
         ArrayList<Object[]> verbosePath = new ArrayList<Object[]>();
         ArrayList<Object> robotInstructions = new ArrayList<Object>();
 
-        double turning_radius = 2;
+        double turning_radius = 1;
 
         // for each item in visiting order
         for (int step = 0; step < visitingOrder.length - 1; step++) {
@@ -35,7 +35,9 @@ public class PathPlanner {
             double syaw = ((Number) visitingOrder[step][2]).doubleValue() * (Math.PI / 180);
             double ex = ((Number) visitingOrder[step + 1][0]).doubleValue();
             double ey = ((Number) visitingOrder[step + 1][1]).doubleValue();
+            int eDeg = ((Number) visitingOrder[step + 1][2]).intValue();
             double eyaw = ((Number) visitingOrder[step + 1][2]).doubleValue() * (Math.PI / 180);
+            int id = ((Number) visitingOrder[step + 1][3]).intValue();
 
             // DubinsPath DPObject = DubinsPathDriver.bestDPObject(sx, sy, syaw, ex, ey,
             // eyaw, turning_radius);
@@ -65,6 +67,9 @@ public class PathPlanner {
                     robotInstructions.add(stmConvert((String) dpInst[i], ((Number) dpInst[i + 1]).intValue()));
                 }
 
+                // since the robot move to a node, take a picture
+                robotInstructions.add(String.format("CAP,%s,%s,%s,%s", id, (int) ex, (int) ey, eDeg));
+
                 // move on to the next node
                 continue;
             }
@@ -76,11 +81,11 @@ public class PathPlanner {
         System.out.println();
         Object[][] output = new Object[verbosePath.size()][4];
         output = verbosePath.toArray(output);
-        for (Object instro : robotInstructions) {
-            System.out.println(instro);
-        }
 
-        return output;
+        Object[] output2 = new Object[robotInstructions.size()];
+        output2 = robotInstructions.toArray(output2);
+
+        return output2;
     }
 
     private static String stmConvert(String segment, int amount) {

@@ -40,9 +40,10 @@ public class TestClient {
                 out.writeUTF(line);
 
                 ObjectInputStream oin = new ObjectInputStream(socket.getInputStream());
+                String stringFromServer1;
                 try {
-                    String stringFromServer = (String) oin.readObject();
-                    System.out.println(stringFromServer);
+                    stringFromServer1 = (String) oin.readObject();
+                    System.out.println(stringFromServer1);
                 } catch (ClassNotFoundException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -66,4 +67,6 @@ public class TestClient {
     public static void main(String args[]) {
         TestClient client = new TestClient("127.0.0.1", 5000);
     }
+
+    // javac -d . TestClient.java
 }

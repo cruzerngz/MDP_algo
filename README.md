@@ -24,27 +24,12 @@
 5. You should see (or may not see depending on how you placed the obstacles) a sample of the arena
 6. Click the front and back arrows to see how the robot moves. Note that it does not capture diagonal movements well
 
-## Connecting To An External Device Via Bluetooth
+## Socket Connection
 
-### Bluetooth connectivity with Serial Port Protocol
-1. Start the local bluetooth server by running `RemoteBluetoothServer.remoteBluetoothServer()` in `Main.java`
-2. Connect local server with client device on the SPP interface
-3. Start sending commands
-   
-    **Send configuration string in this format**
-    ```
-    *1 1 90/5 5 90 17/10 10 270 18*
-    ```
-    Client device should receive path traversal instructions
-
-    ```
-    // TODO: what is the path format?
-    ```
-
-    **Explanation:**
-    - '*' indicates start and end of config file
-    - 1st and 2nd int indicate X, Y coords
-    - 3rd int indicates direction
-    - 4th int indicate photo id
-    - Separate by spaces
-    - Separate robots and obstacles with '/'
+1. Configure your address and port of where you want to connect to
+   ```java
+   AlgoServer.algoServer(address2, port2);
+   ```
+2. Run `Main.java`
+3. You can send messages to the server via the command line
+4. You will also receive messages sent from the server

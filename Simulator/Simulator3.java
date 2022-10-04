@@ -173,7 +173,7 @@ public class Simulator3 {
     // create the arena object
     private void setupArena() {
         arena = SetupArena.setupArena(textArea.getText());
-        path = PathPlanner.gridPath(textArea.getText());
+        path = PathPlanner.gridPath(textArea.getText(), true);
         // System.out.println(Arrays.deepToString(path));
     }
 

@@ -12,6 +12,8 @@ import java.io.*;
 
 public class AlgoServer {
 
+    private int SLEEPO = 0;
+
     private Socket socket = null;
     private InputStream inStream = null;
     private OutputStream outStream = null;
@@ -107,7 +109,6 @@ public class AlgoServer {
                         if (typedMessage != null && typedMessage.length() > 0) {
                             synchronized (socket) {
                                 outStream.write(typedMessage.getBytes("UTF-8"));
-                                sleep(100);
                             }
                         }
                         ;
@@ -135,7 +136,7 @@ public class AlgoServer {
             imageCaptureStep = 1;
             try {
                 // see if a path can actually be built
-                pathInstructions = PathPlanner.gridPath((message.replace(",", "\n")).substring(4));
+                pathInstructions = PathPlanner.gridPath((message.replace(",", "\n")).substring(4), 2);
             } catch (Exception e1) {
                 // if path cannot be built
                 // send an error message to android
@@ -171,14 +172,17 @@ public class AlgoServer {
                 synchronized (socket) {
                     System.out.println(Arrays.toString(pathInstructions));
                     String msg1 = "AND: Path creation successful";
-                    String msg2 = "STM:" + (String) pathInstructions[instructionCount];
+                    String toSTM = "STM:" + (String) pathInstructions[instructionCount];
                     instructionCount++; //increment the instruction index
                     String internal = "Received robot and obstacles from android\nSent ack to android\npath plan created\nFirst instruction sent to STM\n\n";
                     try {
                         outStream.write(msg1.getBytes("UTF-8"));
-                        outStream.write(msg2.getBytes("UTF-8"));
+                        System.out.println("Waiting...\n");
+                        Thread.sleep(SLEEPO);
+                        outStream.write(toSTM.getBytes("UTF-8"));
                         System.out.println(internal);
-                        //Thread.sleep(3000);
+                        System.out.println(Arrays.deepToString(pathInstructions) + "\n\n");
+
                     } catch (Exception e2) {
                     }
                 }
@@ -219,9 +223,10 @@ public class AlgoServer {
                             String internal = String.format("Sent move command %s to robot\n\n",
                                     (String) pathInstructions[instructionCount]);
                             System.out.println(internal);
+                            Thread.sleep(SLEEPO);
                             outStream.write(toSTM.getBytes("UTF-8"));
                             //Thread.sleep(5000);
-                            //Thread.sleep(3000);
+
                         } catch (Exception e) {
                         }
                     }
@@ -283,6 +288,7 @@ public class AlgoServer {
                 synchronized (socket) {
                     try {
                         System.out.println(internal);
+                        Thread.sleep(SLEEPO);
                         outStream.write(toSTM.getBytes("UTF-8"));
                         //Thread.sleep(3000);
                     } catch (Exception e) {

@@ -99,6 +99,7 @@ public class SetupArena {
         int obstacleDir = obstacle.getDirection().getDegree();
         int initX = obstacle.getSafeCoords()[0];
         int initY = obstacle.getSafeCoords()[1];
+
         int[] tempCoords = obstacle.getSafeCoords();
         boolean gotClash = true;
 

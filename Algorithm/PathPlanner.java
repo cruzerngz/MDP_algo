@@ -1,6 +1,7 @@
 package Algorithm;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import Arena.Arena;
@@ -12,6 +13,14 @@ public class PathPlanner {
     static int globalInitDeg;
     static boolean returnVerbose = false;
     static Object[][] globalVerbosePath;
+
+    public static Object[] gridPath(String configFile, int algoNo) {
+        if (algoNo == 2) {
+            return psuedoDubins(configFile);
+        } else {
+            return gridPath(configFile);
+        }
+    }
 
     public static Object[][] gridPath(String configFile, boolean verbose) {
         if (verbose) {
@@ -165,24 +174,29 @@ public class PathPlanner {
             int id = ((Number) visitingOrder[step + 1][3]).intValue();
 
             ///// psuedo dubins /////
+            boolean gotClash = false;
             double opp = ex - sx;
             double adj = ey - sy;
-            double hyp = Math.sqrt(Math.pow(opp, 2) + Math.pow(adj, 2));
-            double theta = Math.abs(Math.toDegrees(Math.atan2(ex - sx, ey - sy))); // base angle
-            double startDirection = (ex > sx & ey > sy) ? theta
-                    : (ex < sx & ey > sy) ? 180 - theta : (ex < sx & ey < sy) ? 270 - theta : 360 - theta;
+            double startDirection = syaw;
+            double hyp = 0;
             Object[][] tempDP = DubinsPathDriver.dubinsPathGrid(sx, sy, startDirection, ex, ey, startDirection, 1);
-            // clash checking
-            boolean gotClash = false;
-            for (Object[] dpStep : tempDP) {
-                if (((Number) dpStep[2]).intValue() == (int) startDirection) {
+            if (opp != 0 & adj != 0) {
+                hyp = Math.sqrt(Math.pow(opp, 2) + Math.pow(adj, 2));
+                double theta = Math.abs(Math.toDegrees(Math.atan2(ex - sx, ey - sy))); // base angle
+                startDirection = (ex > sx & ey > sy) ? theta
+                        : (ex < sx & ey > sy) ? 180 - theta : (ex < sx & ey < sy) ? 270 - theta : 360 - theta;
+                tempDP = DubinsPathDriver.dubinsPathGrid(sx, sy, startDirection, ex, ey, startDirection, 1);
+                // clash checking
+                for (Object[] dpStep : tempDP) {
+                    if (arena.entityClash(
+                            new int[] { ((Number) dpStep[0]).intValue(), ((Number) dpStep[1]).intValue() })) {
+                        gotClash = true;
+                        break;
+                    }
 
                 }
-                if (arena.entityClash(
-                        new int[] { ((Number) dpStep[0]).intValue(), ((Number) dpStep[1]).intValue() })) {
-                    gotClash = true;
-                    break;
-                }
+            } else {
+                gotClash = true;
             }
 
             if (gotClash == false) {
@@ -264,7 +278,6 @@ public class PathPlanner {
                         robotInstructions.add(inst);
                     }
                 }
-
             }
 
         }
@@ -306,8 +319,9 @@ public class PathPlanner {
             } else if (moveDir == 90) { // on the spot turn to face north
                 output = "\\fc12;";
                 globalInitDeg = 90;
-            } else if (moveDir == 180) { // reverse
-                output = "\\fmb10;";
+            } else if (moveDir == 180) { // reverse -- change to turn around
+                //output = "\\fmb10;";
+                output = "\\fc8;";
                 globalInitDeg = 180;
             } else { // moveDir == 270 on the spot turn to face south
                 output = "\\fc4;";
@@ -323,15 +337,17 @@ public class PathPlanner {
             } else if (moveDir == 180) { // ots turn to face west
                 output = "\\fc12;";
                 globalInitDeg = 180;
-            } else { // moveDir == 270 reverse
-                output = "\\fmb10;";
+            } else { // moveDir == 270 reverse -- change to turn around
+                //output = "\\fmb10;";
+                output = "\\fc8;";
                 globalInitDeg = 270;
             }
         }
 
         else if (initDeg == 180) {
-            if (moveDir == 0) { // reverse
-                output = "\\fmb10;";
+            if (moveDir == 0) { // reverse -- change to turn around
+                //output = "\\fmb10;";
+                output = "\\fc8;";
                 globalInitDeg = 0;
             } else if (moveDir == 90) { // turn to face north
                 output = "\\fc4;";
@@ -347,8 +363,9 @@ public class PathPlanner {
             if (moveDir == 0) { // ots turn to face east
                 output = "\\fc12;";
                 globalInitDeg = 0;
-            } else if (moveDir == 90) { // reverse
-                output = "\\fmb10;";
+            } else if (moveDir == 90) { // reverse -- change to turn around
+                //output = "\\fmb10;";
+                output = "\\fc8;";
                 globalInitDeg = 90;
             } else if (moveDir == 180) { // ots turn to face west
                 output = "\\fc4;";

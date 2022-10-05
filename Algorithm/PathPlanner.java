@@ -1,3 +1,4 @@
+
 package Algorithm;
 
 import java.util.ArrayList;
@@ -13,6 +14,8 @@ public class PathPlanner {
     static int globalInitDeg;
     static boolean returnVerbose = false;
     static Object[][] globalVerbosePath;
+
+    static int LOOKAHEAD = 4;
 
     public static Object[] gridPath(String configFile, int algoNo) {
         if (algoNo == 2) {
@@ -291,6 +294,165 @@ public class PathPlanner {
         output2 = robotInstructions.toArray(output2);
 
         return output2;
+    }
+
+    public static Object[] psuedoDubins2(String configFile) {
+
+        // convert configfile into arena
+        Arena arena = SetupArena.setupArena(configFile);
+
+        // obtain visiting order
+        Object[][] visitingOrder = Prim.prim(arena);
+
+        // output
+        ArrayList<Object[]> verbosePath = new ArrayList<Object[]>();
+        ArrayList<Object> robotInstructions = new ArrayList<Object>();
+
+        // for each item in visiting order
+        for (int step = 0; step < visitingOrder.length - 1; step++) {
+            double sx = ((Number) visitingOrder[step][0]).doubleValue();
+            double sy = ((Number) visitingOrder[step][1]).doubleValue();
+            double syaw = ((Number) visitingOrder[step][2]).doubleValue() * (Math.PI / 180);
+            int sDeg = ((Number) visitingOrder[step][2]).intValue();
+            double ex = ((Number) visitingOrder[step + 1][0]).doubleValue();
+            double ey = ((Number) visitingOrder[step + 1][1]).doubleValue();
+            int eDeg = ((Number) visitingOrder[step + 1][2]).intValue();
+            double eyaw = ((Number) visitingOrder[step + 1][2]).doubleValue() * (Math.PI / 180);
+            int id = ((Number) visitingOrder[step + 1][3]).intValue();
+
+            ///// psuedo dubins /////
+            boolean gotClash = false;
+            double opp = ex - sx;
+            double adj = ey - sy;
+            double startDirection = syaw;
+            double hyp = 0;
+            Object[][] tempDP = DubinsPathDriver.dubinsPathGrid(sx, sy, startDirection, ex, ey, startDirection, 1);
+            if (opp != 0 & adj != 0) {
+                hyp = Math.sqrt(Math.pow(opp, 2) + Math.pow(adj, 2));
+                double theta = Math.abs(Math.toDegrees(Math.atan2(ex - sx, ey - sy))); // base angle
+                startDirection = (ex > sx & ey > sy) ? theta
+                        : (ex < sx & ey > sy) ? 180 - theta : (ex < sx & ey < sy) ? 270 - theta : 360 - theta;
+                tempDP = DubinsPathDriver.dubinsPathGrid(sx, sy, startDirection, ex, ey, startDirection, 1);
+                // clash checking
+                for (Object[] dpStep : tempDP) {
+                    if (arena.entityClash(
+                            new int[] { ((Number) dpStep[0]).intValue(), ((Number) dpStep[1]).intValue() })) {
+                        gotClash = true;
+                        break;
+                    }
+
+                }
+            } else {
+                gotClash = true;
+            }
+
+            if (gotClash == false) {
+
+                verbosePath.add(new Object[] { (int) sx, (int) sy, sDeg, " " });
+                verbosePath.add(new Object[] { (int) sx, (int) sy, startDirection, " " });
+                for (Object[] dpStep : tempDP) {
+                    verbosePath.add(new Object[] { dpStep[0], dpStep[1], dpStep[2], " " });
+                }
+
+                robotInstructions.add(stmConvert(sDeg, startDirection, "OTS"));
+                robotInstructions.add(stmConvert("S", (int) hyp));
+                robotInstructions.add(stmConvert(startDirection, eDeg, "OTS"));
+                robotInstructions.add(String.format("CAP,%s,%s,%s,%s", id, (int) ex, (int) ey, eDeg));
+            } else {
+                // generate a manhattan path that is less efficient but guaranteed to be safe
+                int localInitDeg = ((Number) visitingOrder[step][2]).intValue();
+                Manhattan man2 = new Manhattan();
+                Object[][] pathing = man2.manhattan(arena, (int) Math.round(sx), (int) Math.round(sy),
+                        (int) Math.round(ex), (int) Math.round(ey));
+                ArrayList<Object> tempRobotInst = new ArrayList<Object>();
+
+                // for each step in the path generated
+                for (int i = 0; i < pathing.length; i++) {
+                    // last step (at target position)
+                    if (i == pathing.length - 1) {
+                        Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], eDeg, " " };
+                        verbosePath.add(toAdd);
+                        tempRobotInst.add(stmConvert(localInitDeg, eDeg));
+                        verbosePath.get(verbosePath.size() - 1)[3] = "SCAN";
+                        // since the robot move to a node, take a picture
+                        tempRobotInst.add(String.format("CAP,%s,%s,%s,%s", id, (int) ex, (int) ey, eDeg));
+                    }
+
+                    else if (i < pathing.length - LOOKAHEAD) {
+
+                    }
+
+                    else if ((int) pathing[i][0] == (int) pathing[i + 1][0]) {
+                        // same X axis
+                        // move south
+                        if ((int) pathing[i][1] > (int) pathing[i + 1][1]) {
+                            Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], 270, " " };
+                            verbosePath.add(toAdd);
+                            tempRobotInst.add(stmConvert(localInitDeg, 270));
+                        }
+                        // move north
+                        if ((int) pathing[i][1] < (int) pathing[i + 1][1]) {
+                            Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], 90, " " };
+                            verbosePath.add(toAdd);
+                            tempRobotInst.add(stmConvert(localInitDeg, 90));
+                        }
+                    } else if ((int) pathing[i][0] != (int) pathing[i + 1][0]) {
+                        // different X axis
+                        // move east
+                        if ((int) pathing[i][0] < (int) pathing[i + 1][0]) {
+                            Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], 0, " " };
+                            verbosePath.add(toAdd);
+                            tempRobotInst.add(stmConvert(localInitDeg, 0));
+                        }
+                        // move west
+                        if ((int) pathing[i][0] > (int) pathing[i + 1][0]) {
+                            Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], 180, " " };
+                            verbosePath.add(toAdd);
+                            tempRobotInst.add(stmConvert(localInitDeg, 180));
+                        }
+                    }
+                    localInitDeg = globalInitDeg;
+                }
+
+                boolean prevIsStr = false;
+                int strCount = 0;
+                for (Object inst : tempRobotInst) {
+                    if (inst == "\\fmf10;" & prevIsStr == false) {
+                        strCount++;
+                        prevIsStr = true;
+                    } else if (inst == "\\fmf10;" & prevIsStr == true) {
+                        strCount++;
+                    } else if (inst != "\\fmf10;" & prevIsStr == true) {
+                        prevIsStr = false;
+                        String toAdd = "\\fmf" + strCount * 10 + ";";
+                        strCount = 0;
+                        robotInstructions.add(toAdd);
+                        robotInstructions.add(inst);
+                    } else {
+                        robotInstructions.add(inst);
+                    }
+                }
+            }
+
+        }
+        // 
+
+        Object[][] verboseOutput = new Object[verbosePath.size()][4];
+        verboseOutput = verbosePath.toArray(verboseOutput);
+        globalVerbosePath = verboseOutput;
+
+        Object[] output2 = new Object[robotInstructions.size()];
+        output2 = robotInstructions.toArray(output2);
+
+        return output2;
+    }
+
+    private static boolean willBeTurnt(double sx, double sy, double ex, double ey) {
+        if (ex != sx & ey != sy) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private static String stmConvert(String segment, int amount) {

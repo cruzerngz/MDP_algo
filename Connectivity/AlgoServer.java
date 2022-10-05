@@ -12,7 +12,7 @@ import java.io.*;
 
 public class AlgoServer {
 
-    private int SLEEPO = 0;
+    private int SLEEPO = 500;
 
     private Socket socket = null;
     private InputStream inStream = null;
@@ -203,7 +203,7 @@ public class AlgoServer {
                         String[] splitInstr = ((String) pathInstructions[instructionCount]).split(",");
                         String toAndroid = "AND:ROBOT,"
                                 + String.format("%s,%s,%s", splitInstr[2], splitInstr[3], splitInstr[4]);
-                        OBSTACLE_ID = String.format("%s", imageCaptureStep); // save the current obstacle id
+                        OBSTACLE_ID = splitInstr[1]; // save the current obstacle id
                         imageCaptureStep++;
                         try {
 

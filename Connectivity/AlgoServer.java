@@ -1,6 +1,8 @@
 package Connectivity;
 
 import java.net.*;
+import java.util.Arrays;
+
 import Algorithm.PathPlanner;
 import java.io.*;
 
@@ -19,7 +21,7 @@ public class AlgoServer {
     Object[] pathInstructions;
     int instructionCount = 0;
     boolean robotStarted = false;
-    int imageCaptureStep = 0;
+    int imageCaptureStep = 1;
     String OBSTACLE_ID = "";
 
     public AlgoServer(String address, int port) {
@@ -130,7 +132,7 @@ public class AlgoServer {
             // reset exisiting pathInstructions, instruction count
             pathInstructions = new Object[] {};
             instructionCount = 0;
-            imageCaptureStep = 0;
+            imageCaptureStep = 1;
             try {
                 // see if a path can actually be built
                 pathInstructions = PathPlanner.gridPath((message.replace(",", "\n")).substring(4));
@@ -138,6 +140,7 @@ public class AlgoServer {
                 // if path cannot be built
                 // send an error message to android
                 synchronized (socket) {
+                    System.out.println(Arrays.toString(pathInstructions));
                     String msg1 = "AND: Path creation unsuccessful. Check the values sent...";
                     String internal = "Received wrong format for robot and obstacles from android\n\n";
                     try {
@@ -155,6 +158,7 @@ public class AlgoServer {
                     String internal = "Impossible path\n\n";
                     try {
                         outStream.write(msg1.getBytes("UTF-8"));
+                        //Thread.sleep(3000);
                         System.out.println(internal);
                     } catch (Exception e2) {
                     }
@@ -165,6 +169,7 @@ public class AlgoServer {
             // send ack to android and first instruction to stm
             else {
                 synchronized (socket) {
+                    System.out.println(Arrays.toString(pathInstructions));
                     String msg1 = "AND: Path creation successful";
                     String msg2 = "STM:" + (String) pathInstructions[instructionCount];
                     instructionCount++; //increment the instruction index
@@ -173,6 +178,7 @@ public class AlgoServer {
                         outStream.write(msg1.getBytes("UTF-8"));
                         outStream.write(msg2.getBytes("UTF-8"));
                         System.out.println(internal);
+                        //Thread.sleep(3000);
                     } catch (Exception e2) {
                     }
                 }
@@ -182,7 +188,7 @@ public class AlgoServer {
 
     private void stmHandler(String message) {
         // after successful robot movement and ack from stm...
-        if (message.matches("STM:&")) {
+        if (message.matches("STM:&.*")) {
             // if there are still instructions left, send next instruction
             if (instructionCount < pathInstructions.length) {
                 // if next instruction is image capture, ask robot to take picture, and send current coords to android
@@ -193,10 +199,14 @@ public class AlgoServer {
                         String[] splitInstr = ((String) pathInstructions[instructionCount]).split(",");
                         String toAndroid = "AND:ROBOT,"
                                 + String.format("%s,%s,%s", splitInstr[2], splitInstr[3], splitInstr[4]);
-                        OBSTACLE_ID = splitInstr[1]; // save the current obstacle id
+                        OBSTACLE_ID = String.format("%s", imageCaptureStep); // save the current obstacle id
+                        imageCaptureStep++;
                         try {
+
                             outStream.write(toCamera.getBytes("UTF-8"));
                             outStream.write(toAndroid.getBytes("UTF-8"));
+                            //'Thread.sleep(1000);
+                            //Thread.sleep(3000);
                         } catch (Exception e) {
                         }
                     }
@@ -210,6 +220,8 @@ public class AlgoServer {
                                     (String) pathInstructions[instructionCount]);
                             System.out.println(internal);
                             outStream.write(toSTM.getBytes("UTF-8"));
+                            //Thread.sleep(5000);
+                            //Thread.sleep(3000);
                         } catch (Exception e) {
                         }
                     }
@@ -221,17 +233,33 @@ public class AlgoServer {
 
     private void imgHandler(String message) {
         // receive image from camera
-        if (message.matches("IMG:.*")) {
+        if (message.matches("IMG:CAP:.*")) {
 
             String imageId = "";
             try {
                 // if the image recognition did not get anything, [], escpae the function
-                if (message.charAt(4) == '[' & message.charAt(5) == ']') {
+                //if (message.charAt(8) == '[' & message.charAt(9) == ']') {
+                if (message.matches("IMG:CAP:-1.*")) {
                     imageId = "";
                     return;
-                } else {
+                } else if (message.matches("IMG:CAP:-2.*")) {
+                    synchronized (socket) {
+                        String captureAgain = "IMG:CAP";
+                        try {
+                            outStream.write(captureAgain.getBytes("UTF-8"));
+                            //Thread.sleep(3000);
+                        } catch (Exception e) {
+                        }
+                    }
+                    return;
+                }
+
+                else {
                     // otherwise...
-                    imageId = message.substring(5, 7);
+                    imageId = message.substring(8, 10);
+                    String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
+                    outStream.write(toAndroid.getBytes("UTF-8"));
+                    System.out.println("Printed imageId " + imageId + "\n\n");
                 }
             } catch (Exception e) {
             }
@@ -240,6 +268,7 @@ public class AlgoServer {
                 String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
                 try {
                     outStream.write(toAndroid.getBytes("UTF-8"));
+                    //Thread.sleep(3000);
                 } catch (Exception e) {
                 }
             }
@@ -255,6 +284,7 @@ public class AlgoServer {
                     try {
                         System.out.println(internal);
                         outStream.write(toSTM.getBytes("UTF-8"));
+                        //Thread.sleep(3000);
                     } catch (Exception e) {
                     }
                 }
@@ -265,6 +295,7 @@ public class AlgoServer {
                     try {
                         System.out.println(internal);
                         outStream.write(toCamera.getBytes("UTF-8"));
+                        //Thread.sleep(3000);
                     } catch (Exception e) {
                     }
                 }

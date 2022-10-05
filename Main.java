@@ -16,12 +16,16 @@ public class Main {
     String address2 = "192.168.43.1";
     AlgoServer.algoServer(address, port);
 
-    PathPlanner.gridPath(configFile);
-    //System.out.println(Arrays.toString(PathPlanner.psuedoDubins(configFile)));
+    //PathPlanner.psuedoDubins2(configFile);
+    System.out.println(Arrays.toString(PathPlanner.psuedoDubins(configFile)));
     //System.out.println(PathPlanner.gridPath(configFile, true));
 
     //Simulator3 guiSim = new Simulator3();
-    //guiSim.guiSim();
+    // guiSim.guiSim();
+
+    /*
+     * [\fc1;, \fmf40;, \fc15;, CAP,10,5,2,90, \fc12;, \fmf20;, \fc4;, \fmf100;, \fc4;, CAP,20,2,13,0, \fc15;, \fmf50;, \fc9;, CAP,12,4,18,180, \fc12;, \fmf20;, \fc12;, \fmf20;, \fc4;, \fmf20;, \fc12;, \fmf70;, \fc12;, CAP,14,15,12,90, \fc8;, \fmf20;, \fc4;, CAP,30,15,9,180, \fc12;, \fmf20;, CAP,15,15,7,270]
+     */
 
   }
 

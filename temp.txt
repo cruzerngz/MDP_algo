@@ -7,3 +7,59 @@
 1 19 0 12
 
 [\fc1;, \fmf40;, \fc15;, CAP,10,5,2,90, \fc12;, \fmf20;, \fc4;, \fmf100;, \fc4;, CAP,20,2,13,0, \fc15;, \fmf50;, \fc9;, CAP,12,4,18,180, \fc12;, \fmf20;, \fc12;, \fmf20;, \fc4;, \fmf20;, \fc12;, \fmf70;, \fc12;, CAP,14,15,12,90, \fc12;, \fmf30;, \fc0;, CAP,30,15,9,180, \fc12;, \fmf20;, CAP,15,15,7,270]
+
+
+String turn = (String) robotInstructions.get(i + 1);
+                String turnAmt = turn.substring(4);
+                String refine = "";
+                switch (turnAmt) {
+                    case "0":
+                        refine = "\\ftr0;";
+                        break;
+                    case "1":
+                        refine = "\\ftr22;";
+                        break;
+                    case "2":
+                        refine = "\\ftr22;";
+                        break;
+                    case "3":
+                        refine = "\\ftr22;";
+                        break;
+                    case "4":
+                        refine = "\\ftr22;";
+                        break;
+                    case "5":
+                        refine = "\\ftr22;";
+                        break;
+                    case "6":
+                        refine = "\\ftr22;";
+                        break;
+                    case "7":
+                        refine = "\\ftr22;";
+                        break;
+                    case "8":
+                        refine = "\\ftr22;";
+                        break;
+                    case "9":
+                        refine = "\\ftr22;";
+                        break;
+                    case "10":
+                        refine = "\\ftr22;";
+                        break;
+                    case "11":
+                        refine = "\\ftr22;";
+                        break;
+                    case "12":
+                        refine = "\\ftr22;";
+                        break;
+                    case "13":
+                        refine = "\\ftr22;";
+                        break;
+                    case "14":
+                        refine = "\\ftr22;";
+                        break;
+                    case "15":
+                        refine = "\\ftr22;";
+                        break;
+                    default:
+                }

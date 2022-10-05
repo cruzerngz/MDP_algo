@@ -15,7 +15,7 @@ public class PathPlanner {
     static boolean returnVerbose = false;
     static Object[][] globalVerbosePath;
 
-    static int LOOKAHEAD = 4;
+    static int LOOKAHEAD = 2;
 
     public static Object[] gridPath(String configFile, int algoNo) {
         if (algoNo == 2) {
@@ -290,11 +290,50 @@ public class PathPlanner {
         verboseOutput = verbosePath.toArray(verboseOutput);
         globalVerbosePath = verboseOutput;
 
+        for (int i = 0; i < robotInstructions.size(); i++) {
+            String change = "";
+            switch ((String) robotInstructions.get(i)) {
+                case "\\fc0;":
+                case "\\fc1;":
+                case "\\fc2;":
+                case "\\fc3;":
+                    change = "\\ftrf45;";
+                    break;
+                case "\\fc4;":
+                    change = "\\ftrf90;";
+                    break;
+                case "\\fc5;":
+                case "\\fc6;":
+                case "\\fc8;":
+                case "\\fc9;":
+                    change = "\\ftrf135;";
+                    break;
+                case "\\fc10;":
+                case "\\fc11;":
+                    change = "\\ftlf45;";
+                    break;
+                case "\\fc12;":
+                    change = "\\ftlf90;";
+                    break;
+                case "\\fc13;":
+                case "\\fc14;":
+                case "\\fc15;":
+                    change = "\\ftlf45;";
+                    break;
+            }
+            if (change != "") {
+                robotInstructions.set(i, change);
+            }
+
+        }
+
         Object[] output2 = new Object[robotInstructions.size()];
         output2 = robotInstructions.toArray(output2);
 
         return output2;
     }
+
+    //vvvvvvvvvvvvvvvvv//
 
     public static Object[] psuedoDubins2(String configFile) {
 
@@ -366,51 +405,77 @@ public class PathPlanner {
                         (int) Math.round(ex), (int) Math.round(ey));
                 ArrayList<Object> tempRobotInst = new ArrayList<Object>();
 
-                // for each step in the path generated
-                for (int i = 0; i < pathing.length; i++) {
-                    // last step (at target position)
-                    if (i == pathing.length - 1) {
-                        Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], eDeg, " " };
-                        verbosePath.add(toAdd);
-                        tempRobotInst.add(stmConvert(localInitDeg, eDeg));
-                        verbosePath.get(verbosePath.size() - 1)[3] = "SCAN";
-                        // since the robot move to a node, take a picture
-                        tempRobotInst.add(String.format("CAP,%s,%s,%s,%s", id, (int) ex, (int) ey, eDeg));
+                boolean previousTurn = false;
+                int forwardCounter = 0;
+                for (int i = 0; i < pathing.length - LOOKAHEAD; i++) {
+                    int startX = (int) pathing[i][0];
+                    int startY = (int) pathing[i][1];
+                    int endX = (int) pathing[i + LOOKAHEAD][0];
+                    int endY = (int) pathing[i + LOOKAHEAD][1];
+                    String output = "";
+
+                    /*
+                    if ((pathing[i][0] == pathing[i + 1][0] & pathing[i + 3][1] == pathing[i + 4][1])
+                            | (pathing[i][1] == pathing[i + 1][1] & pathing[i + 3][0] == pathing[i + 4][0])) { */
+
+                    if (endX > startX & endY > startY) {
+                        // ends up north east
+                        if (localInitDeg == 0) {
+                            output = "\\ftlf90;";
+                            globalInitDeg = 90;
+                        } else if (localInitDeg == 90) {
+                            output = "\\ftrf90;";
+                            globalInitDeg = 0;
+                        }
+                    } else if (endX > startX & endY < startY) {
+                        // southeast
+                        if (localInitDeg == 0) {
+                            output = "\\ftrf90;";
+                            globalInitDeg = 270;
+                        } else if (localInitDeg == 270) {
+                            output = "\\ftlf90;";
+                            globalInitDeg = 0;
+                        }
+
+                    } else if (endX < startX & endY > startY) {
+                        // northw
+                        if (localInitDeg == 180) {
+                            output = "\\ftrf90;";
+                            globalInitDeg = 90;
+                        } else if (localInitDeg == 90) {
+                            output = "\\ftlf90;";
+                            globalInitDeg = 180;
+                        }
+
+                    } else if (endX < startX & endY < startY) {
+                        // move sw
+                        if (localInitDeg == 180) {
+                            output = "\\ftlf90;";
+                            globalInitDeg = 270;
+                        } else if (localInitDeg == 270) {
+                            output = "\\ftrf90;";
+                            globalInitDeg = 180;
+                        }
                     }
 
-                    else if (i < pathing.length - LOOKAHEAD) {
+                    if (output == "") {
+                        if (previousTurn) {
+                            previousTurn = false;
+                        } else {
+                            forwardCounter++;
+                        }
 
+                    } else if (output == "" & i == pathing.length - LOOKAHEAD) {
+                        String toAdd = "\\fmf";
+                        robotInstructions.add(toAdd);
+                    } else {
+                        String forward = "\\fmf" + forwardCounter + ";";
+                        forwardCounter = 0;
+                        robotInstructions.add(forward);
+                        robotInstructions.add(output);
+                        previousTurn = true;
                     }
 
-                    else if ((int) pathing[i][0] == (int) pathing[i + 1][0]) {
-                        // same X axis
-                        // move south
-                        if ((int) pathing[i][1] > (int) pathing[i + 1][1]) {
-                            Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], 270, " " };
-                            verbosePath.add(toAdd);
-                            tempRobotInst.add(stmConvert(localInitDeg, 270));
-                        }
-                        // move north
-                        if ((int) pathing[i][1] < (int) pathing[i + 1][1]) {
-                            Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], 90, " " };
-                            verbosePath.add(toAdd);
-                            tempRobotInst.add(stmConvert(localInitDeg, 90));
-                        }
-                    } else if ((int) pathing[i][0] != (int) pathing[i + 1][0]) {
-                        // different X axis
-                        // move east
-                        if ((int) pathing[i][0] < (int) pathing[i + 1][0]) {
-                            Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], 0, " " };
-                            verbosePath.add(toAdd);
-                            tempRobotInst.add(stmConvert(localInitDeg, 0));
-                        }
-                        // move west
-                        if ((int) pathing[i][0] > (int) pathing[i + 1][0]) {
-                            Object[] toAdd = new Object[] { pathing[i][0], pathing[i][1], 180, " " };
-                            verbosePath.add(toAdd);
-                            tempRobotInst.add(stmConvert(localInitDeg, 180));
-                        }
-                    }
                     localInitDeg = globalInitDeg;
                 }
 
@@ -447,14 +512,6 @@ public class PathPlanner {
         return output2;
     }
 
-    private static boolean willBeTurnt(double sx, double sy, double ex, double ey) {
-        if (ex != sx & ey != sy) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private static String stmConvert(String segment, int amount) {
         String output = "\\f";
         switch (segment) {
@@ -468,6 +525,75 @@ public class PathPlanner {
                 output = output + String.format("mf%s;", (int) (amount * 10));
                 break;
             default:
+        }
+        return output;
+    }
+
+    private static String normalTurn(int initDeg, int moveDir) {
+        String output = "";
+        if (initDeg == 0) {
+            if (moveDir == 0) { // move forward
+                output = "\\fmf10;";
+                globalInitDeg = 0;
+            } else if (moveDir == 90) { // turn left face north
+                output = "\\ftlf90;";
+                globalInitDeg = 90;
+            } else if (moveDir == 180) { // reverse -- change to turn around
+                //output = "\\fmb10;";
+                output = "\\fc8;";
+                globalInitDeg = 180;
+            } else { // moveDir == 270 turn right face south
+                output = "\\ftrf90;";
+                globalInitDeg = 270;
+            }
+        } else if (initDeg == 90) {
+            if (moveDir == 0) { // turn left face east
+                output = "\\ftrf90;";
+                globalInitDeg = 0;
+            } else if (moveDir == 90) { // move forward
+                output = "\\fmf10;";
+                globalInitDeg = 90;
+            } else if (moveDir == 180) { // turn left face west
+                // output = "\\fc12;";
+                output = "\\ftlf90;";
+                globalInitDeg = 180;
+            } else { // moveDir == 270 reverse -- change to turn around
+                //output = "\\fmb10;";
+                output = "\\fc8;";
+                globalInitDeg = 270;
+            }
+        }
+
+        else if (initDeg == 180) {
+            if (moveDir == 0) { // reverse -- change to turn around
+                //output = "\\fmb10;";
+                output = "\\fc8;";
+                globalInitDeg = 0;
+            } else if (moveDir == 90) { // turn right to face north
+                output = "\\ftrf90;";
+                globalInitDeg = 90;
+            } else if (moveDir == 180) { // forward
+                output = "\\fmf10;";
+                globalInitDeg = 180;
+            } else { // moveDir == 270  turn left to face south
+                output = "\\ftlf90;";
+                globalInitDeg = 270;
+            }
+        } else { // initDeg == 270
+            if (moveDir == 0) { // turn left to face east
+                output = "\\ftlf90;";
+                globalInitDeg = 0;
+            } else if (moveDir == 90) { // reverse -- change to turn around
+                //output = "\\fmb10;";
+                output = "\\fc8;";
+                globalInitDeg = 90;
+            } else if (moveDir == 180) { // turn right to face west
+                output = "\\ftrf90;";
+                globalInitDeg = 180;
+            } else { // moveDir == 270 forward
+                output = "\\fmf10;";
+                globalInitDeg = 270;
+            }
         }
         return output;
     }

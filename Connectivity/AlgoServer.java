@@ -300,6 +300,7 @@ public class AlgoServer {
                 synchronized (socket) {
                     try {
                         System.out.println(internal);
+                        Thread.sleep(SLEEPO);
                         outStream.write(toCamera.getBytes("UTF-8"));
                         //Thread.sleep(3000);
                     } catch (Exception e) {

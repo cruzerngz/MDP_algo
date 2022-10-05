@@ -17,8 +17,8 @@ public class Main {
     AlgoServer.algoServer(address, port);
 
     PathPlanner.gridPath(configFile);
-    System.out.println(Arrays.toString(PathPlanner.psuedoDubins(configFile)));
-    System.out.println(PathPlanner.gridPath(configFile, true));
+    //System.out.println(Arrays.toString(PathPlanner.psuedoDubins(configFile)));
+    //System.out.println(PathPlanner.gridPath(configFile, true));
 
     Simulator3 guiSim = new Simulator3();
     guiSim.guiSim();

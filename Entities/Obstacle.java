@@ -7,7 +7,7 @@ import Constants.*;
 public class Obstacle extends Entity {
 
     int pictureId;
-    int allowance = 3;
+    int allowance = 1;
     public int[][] dangerCoords; // coordinates surrounding the obstacle that the robot should not get close to
     int[] safeCoord; // the "expected" location the robot should go to in order to view the obstacle
                      // (this is not always accurate however)

@@ -255,3 +255,7 @@ public static Object[] psuedoDubins2(String configFile) {
 
 [\fc1;, \fmf40;, \fc15;, CAP,10,5,2,90, \fc12;, \fmf20;, \fc4;, \fmf100;, \fc4;, CAP,20,2,13,0, \fc4;, \fmf10;, \fc12;, \fmf40;, \fc12;, \fc4;, \fmf70;, \fc12;, CAP,14,15,12,90, \fc8;, \fmf20;, \fc4;, 
 CAP,30,15,9,180, \fc12;, \fmf20;, CAP,15,15,7,270]
+
+
++++TRY OUT ===2===
+[\fmf150;, CAP,1,1,15,90, \fc4;, \fmf40;, \fc4;, CAP,2,6,15,270, \fc8;, \fc4;, \fmf60;, CAP,4,12,16,0, \fc4;, \fmf80;, \fc12;, \fc8;, CAP,3,13,7,180, \fc4;, \fmf10;, \fc4;, \fmf30;, CAP,5,16,9,0, \fc4;, \fmf60;, \fc4;, CAP,6,16,2,180]

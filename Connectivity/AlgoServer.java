@@ -141,12 +141,12 @@ public class AlgoServer {
             imageCaptureStep = 1;
             try {
                 // see if a path can actually be built
-                pathInstructions = PathPlanner.gridPath((message.replace(",", "\n")).substring(4), 2);
+                pathInstructions = PathPlanner.psuedoDubins((message.replace(",", "\n")).substring(4));
             } catch (Exception e1) {
                 // if path cannot be built
                 // send an error message to android
                 synchronized (socket) {
-                    System.out.println(Arrays.toString(pathInstructions));
+                    System.out.println(Arrays.toString(pathInstructions) + "\n\n\n");
                     String msg1 = "AND: Path creation unsuccessful. Check the values sent...";
                     String internal = "Received wrong format for robot and obstacles from android\n\n";
                     try {
@@ -197,7 +197,7 @@ public class AlgoServer {
 
     private void stmHandler(String message) {
         // after successful robot movement and ack from stm...
-        if (message.matches("STM:&.*") & ADJUSTMENT_FLAG == false) {
+        if (message.matches("STM:&.*")) {
             // if there are still instructions left, send next instruction
             if (instructionCount < pathInstructions.length) {
                 // if next instruction is image capture, ask robot to take picture, and send current coords to android

@@ -82,7 +82,7 @@ public class Obstacle extends Entity {
                 break;
             default:
         }
-        System.out.println(Arrays.toString(safeCoord));
+        // System.out.println(Arrays.toString(safeCoord));
     }
 
     public void setSafeCoord(int x, int y) {

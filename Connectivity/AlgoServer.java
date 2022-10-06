@@ -289,6 +289,7 @@ public class AlgoServer {
                 // if the image recognition did not get anything, [], escpae the function
                 if (message.matches("IMG:CAP:-1.*") || message.matches("IMG:CAP:-2.*")) {
                     System.out.println("No image capture. Performing readjustment...\n\n");
+                    /*
                     if (ADJUSTMENT_COUNT < 2) {
                         readjustment();
                         return;
@@ -305,37 +306,19 @@ public class AlgoServer {
                         }
                         ADJUSTMENT_COUNT = 0;
                         BACKWARD_COUNT = 0;
-
+                    
                         //moveBack();
+                    } */
+                }
+                // otherwise...
+                imageId = message.substring(8, 10);
+                synchronized (socket) {
+                    String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
+
+                    try {
+                        outStream.write(toAndroid.getBytes("UTF-8"));
+                    } catch (Exception e) {
                     }
-                } else {
-                    if (IS_ADJUSTING) {
-                        AFTER_ADJUST = true;
-                        IS_ADJUSTING = false;
-                        synchronized (socket) {
-                            String toSTM = "\\fmf" + BACKWARD_COUNT * 10 + ";";
-                            try {
-
-                                outStream.write(toSTM.getBytes("UTF-8"));
-                                Thread.sleep(SLEEPO);
-                            } catch (Exception e) {
-                            }
-                        }
-                        ADJUSTMENT_COUNT = 0;
-                        BACKWARD_COUNT = 0;
-                    } else {
-                        // otherwise...
-                        imageId = message.substring(8, 10);
-                        synchronized (socket) {
-                            String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
-
-                            try {
-                                outStream.write(toAndroid.getBytes("UTF-8"));
-                            } catch (Exception e) {
-                            }
-                        }
-                    }
-
                 }
 
                 // String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
@@ -385,6 +368,7 @@ public class AlgoServer {
                 }
             }
         }
+
     }
 
     private void readjustment() {

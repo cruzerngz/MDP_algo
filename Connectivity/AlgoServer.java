@@ -26,9 +26,10 @@ public class AlgoServer {
     int imageCaptureStep = 1;
     String OBSTACLE_ID = "";
 
-    boolean adjustmentFlag = false;
-    int adjustmentCounter = 0;
-    boolean adjustmentOutcome = false;
+    boolean ADJUSTMENT_FLAG = false;
+    int ADJUSTMENT_FORWARD_COUNT = 0;
+    int ADJUSTMENT_BACKWARD_COUNT = 0;
+    boolean ADJUSTMENT_OUTCOME = false;
 
     public AlgoServer(String address, int port) {
         this.address = address;
@@ -196,7 +197,7 @@ public class AlgoServer {
 
     private void stmHandler(String message) {
         // after successful robot movement and ack from stm...
-        if (message.matches("STM:&.*") & adjustmentFlag == false) {
+        if (message.matches("STM:&.*") & ADJUSTMENT_FLAG == false) {
             // if there are still instructions left, send next instruction
             if (instructionCount < pathInstructions.length) {
                 // if next instruction is image capture, ask robot to take picture, and send current coords to android
@@ -237,8 +238,6 @@ public class AlgoServer {
                 }
                 instructionCount++;
             }
-        } else if (message.matches("STM:&.*") & adjustmentFlag) {
-
         }
     }
 
@@ -252,34 +251,32 @@ public class AlgoServer {
                 //if (message.charAt(8) == '[' & message.charAt(9) == ']') {
                 if (message.matches("IMG:CAP:-1.*")) {
                     System.out.println("No image capture. Performing readjustment...\n\n");
-                    adjustmentOutcome = false;
-                    imageId = "";
-                    return;
+                    //readjustment(-1);
+                    // return;
                 } else if (message.matches("IMG:CAP:-2.*")) {
                     System.out.println("Poor capture. Performing readjustment...\n\n");
-                    adjustmentOutcome = false;
-                    synchronized (socket) {
-                        String captureAgain = "IMG:CAP";
-
-                        try {
-                            outStream.write(captureAgain.getBytes("UTF-8"));
-                        } catch (Exception e) {
-                        }
-                    }
-                    return;
+                    //readjustment(-2);
+                    // return;
                 }
 
-                else {
-                    // otherwise...
-                    imageId = message.substring(8, 10);
+                // otherwise...
+                imageId = message.substring(8, 10);
+                synchronized (socket) {
                     String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
-                    outStream.write(toAndroid.getBytes("UTF-8"));
-                    System.out.println("Printed imageId " + imageId + "\n\n");
-                    adjustmentOutcome = true;
+
+                    try {
+                        outStream.write(toAndroid.getBytes("UTF-8"));
+                    } catch (Exception e) {
+                    }
                 }
+                // String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
+                // outStream.write(toAndroid.getBytes("UTF-8"));
+                System.out.println("Printed imageId " + imageId + "\n\n");
+
             } catch (Exception e) {
             }
 
+            /*
             synchronized (socket) {
                 String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
                 try {
@@ -287,7 +284,7 @@ public class AlgoServer {
                     //Thread.sleep(3000);
                 } catch (Exception e) {
                 }
-            }
+            } */
 
             // after which send next instruction to STM
             if (instructionCount < pathInstructions.length) {
@@ -323,19 +320,10 @@ public class AlgoServer {
 
     private void readjustment(int error) {
         // first time the readjustment function is called
-        if (adjustmentFlag == false) {
-            adjustmentFlag = true;
+        if (ADJUSTMENT_FLAG == false) {
+            ADJUSTMENT_FLAG = true;
         }
-        // in readjustment phase but the outcome of prior readjustment is good
-        if (adjustmentFlag == true & adjustmentOutcome == true) {
-            if (error == -1) {
-
-            }
-            if (error == -2) {
-
-            }
-        }
-
+        // when reaDJUSTMENT_FLAG is true and outcome of prior readjustment is bad
         if (error == -1) { //no image caputred
             synchronized (socket) {
                 try {
@@ -344,19 +332,25 @@ public class AlgoServer {
                     Thread.sleep(SLEEPO);
                     outStream.write(moveBack.getBytes("UTF-8"));
                     outStream.write(imageCap.getBytes("UTF-8"));
-                    String tiltLeft = "STM:\\fc15;";
-                    //Thread.sleep(5000);
-
+                    ADJUSTMENT_FORWARD_COUNT++;
                 } catch (Exception e) {
                 }
             }
         } else if (error == -2) { //image unclear
+            synchronized (socket) {
+                try {
+                    String imageCap = "IMG:CAP";
+                    String moveForward = "STM:\\fmf10;";
+                    Thread.sleep(SLEEPO);
+                    outStream.write(moveForward.getBytes("UTF-8"));
+                    outStream.write(imageCap.getBytes("UTF-8"));
+                    ADJUSTMENT_BACKWARD_COUNT++;
+                } catch (Exception e) {
+                }
+            }
+        } else if (error == 0) { //reset
 
         }
-
-    }
-
-    private void stmReadjustment() {
 
     }
 

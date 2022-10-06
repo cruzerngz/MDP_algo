@@ -244,3 +244,14 @@ public static Object[] psuedoDubins2(String configFile) {
 
         return output2;
     }
+
+
+[\ftrf22;, \ftlf22;, CAP,10,5,2,90, \fmb20;, \ftlf88;, \ftrf88;, \fmf40;, \ftrf88;, CAP,20,2,13,0, \fmb20;, \ftrf88;, \ftlf88;, \ftlf88;, \ftrf88;, \fmf10;, \ftlf88;, CAP,14,15,12,90, \fmb20;, \fc8;, \ftrf88;, CAP,30,15,9,180, \fmb20;, \ftlf88;, CAP,15,15,7,270, \fmb20;]
+
+[\ftrf44;, \ftlf44;, CAP,10,5,2,90, \fmb20;, \ftlf110;, \ftrf110;, \fmf40;, \ftrf110;, CAP,20,2,13,0, \fmb20;, \ftrf110;, \ftlf110;, \ftlf110;, \ftrf110;, \fmf10;, \ftlf110;, CAP,14,15,12,90, \fmb20;, 
+\fc8;, \ftrf110;, CAP,30,15,9,180, \fmb20;, \ftlf110;, CAP,15,15,7,270, \fmb20;]
+
+[\ftrf22;, \ftlf22;, CAP,10,5,2,90, \fmb20;, \ftlf88;, \ftrf88;, \fmf40;, \ftrf88;, CAP,20,2,13,0, \fmb20;, \ftrf88;, \ftlf88;, \ftlf88;, \ftrf88;, \fmf10;, \ftlf88;, CAP,14,15,12,90, \fmb20;, \fc8;, \ftrf88;, CAP,30,15,9,180, \fmb20;, \ftlf88;, CAP,15,15,7,270, \fmb20;]
+
+[\fc1;, \fmf40;, \fc15;, CAP,10,5,2,90, \fc12;, \fmf20;, \fc4;, \fmf100;, \fc4;, CAP,20,2,13,0, \fc4;, \fmf10;, \fc12;, \fmf40;, \fc12;, \fc4;, \fmf70;, \fc12;, CAP,14,15,12,90, \fc8;, \fmf20;, \fc4;, 
+CAP,30,15,9,180, \fc12;, \fmf20;, CAP,15,15,7,270]

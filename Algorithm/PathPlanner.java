@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import javax.management.relation.RoleNotFoundException;
+
 import Arena.Arena;
 import Simulator.SetupArena;
 
@@ -284,232 +286,179 @@ public class PathPlanner {
             }
 
         }
-        // 
 
+        // next step is to transform the path
+        // transformations performed
+        // changing on the spot turns to regular turns (must be preceeded by forward/backward movement)
+        ArrayList<Object> newInst = new ArrayList<Object>();
+        for (int step = 0; step < robotInstructions.size(); step++) {
+            // Determining instruction and extracting values
+            String step1 = ((String) robotInstructions.get(step)).substring(1,
+                    ((String) robotInstructions.get(step)).length() - 1);
+
+            String step2 = "", step3 = "";
+            if (step + 1 < robotInstructions.size()) {
+                step2 = ((String) robotInstructions.get(step + 1)).substring(1,
+                        ((String) robotInstructions.get(step + 1)).length() - 1);
+            }
+            if (step + 2 < robotInstructions.size()) {
+                step3 = ((String) robotInstructions.get(step + 2)).substring(1,
+                        ((String) robotInstructions.get(step + 2)).length() - 1);
+            }
+            /////
+            // if the current step and the next 2 instructions are a dubins path
+            /////
+            if (step1.matches("fc.*") & step2.matches("fmf.*") & step3.matches("fc.*")) {
+                int turn1 = Integer.parseInt(step1.substring(2));
+                int move = Integer.parseInt(step2.substring(3));
+                int turn2 = Integer.parseInt(step3.substring(2));
+                if (move < 40) {
+                    String[] turnResult1 = otsToTurn(turn1).split("&");
+                    String[] turnResult2 = otsToTurn(turn2).split("&");
+                    // add the first turn
+                    newInst.add(turnResult1[0]);
+                    if (turnResult1.length == 2) {
+                        newInst.add(turnResult1[1]);
+                    }
+                    // add the second turn
+                    newInst.add(turnResult2[0]);
+                    if (turnResult2.length == 2) {
+                        newInst.add(turnResult2[1]);
+                    }
+                } else {
+                    String[] turnResult1 = otsToTurn(turn1).split("&");
+                    String[] turnResult2 = otsToTurn(turn2).split("&");
+                    String moveResult = "\\fmf" + (move - 30) + ";";
+                    // add the first turn
+                    newInst.add(turnResult1[0]);
+                    if (turnResult1.length == 2) {
+                        newInst.add(turnResult1[1]);
+                    }
+                    // add the move forward
+                    newInst.add(moveResult);
+                    // add the second turn
+                    newInst.add(turnResult2[0]);
+                    if (turnResult2.length == 2) {
+                        newInst.add(turnResult2[1]);
+                    }
+                }
+                if (step + 3 < robotInstructions.size()) {
+                    step += 2;
+                }
+            }
+            /////
+            // if the current step is image capture
+            /////
+            else if (step1.matches("AP.*")) {
+                step1 = ((String) robotInstructions.get(step)).substring(1);
+                newInst.add("C" + step1);
+                newInst.add("\\fmb10;");
+            }
+            /////
+            // if the current step is move forward and then turn
+            /////
+            else if (step1.matches("fmf.*") & step2.matches("fc.*")) {
+                int move = Integer.parseInt(step1.substring(3));
+                int turn = Integer.parseInt(step2.substring(2));
+                if (move < 40) {
+                    String[] turnResult = otsToTurn(turn).split("&");
+                    // add the turn
+                    newInst.add(turnResult[0]);
+                    if (turnResult.length == 2) {
+                        newInst.add(turnResult[1]);
+                    }
+                } else {
+                    String[] turnResult = otsToTurn(turn).split("&");
+                    String moveResult = "\\fmf" + (move - 30) + ";";
+                    // add the move
+                    newInst.add(moveResult);
+                    // add the turn
+                    newInst.add(turnResult[0]);
+                    if (turnResult.length == 2) {
+                        newInst.add(turnResult[1]);
+                    }
+                }
+                if (step + 2 < robotInstructions.size()) {
+                    step += 1;
+                }
+            }
+            /////
+            // if the current step is turn and then move forward
+            /////
+            else if (step2.matches("fmf.*") & step1.matches("fc.*")) {
+                int move = Integer.parseInt(step2.substring(3));
+                int turn = Integer.parseInt(step1.substring(2));
+                if (move < 40) {
+                    String[] turnResult = otsToTurn(turn).split("&");
+                    // add the turn
+                    newInst.add(turnResult[0]);
+                    if (turnResult.length == 2) {
+                        newInst.add(turnResult[1]);
+                    }
+                } else {
+                    String[] turnResult = otsToTurn(turn).split("&");
+                    String moveResult = "\\fmf" + (move - 30) + ";";
+                    // add the turn
+                    newInst.add(turnResult[0]);
+                    if (turnResult.length == 2) {
+                        newInst.add(turnResult[1]);
+                    }
+                    // add the move
+                    newInst.add(moveResult);
+
+                }
+                if (step + 2 < robotInstructions.size()) {
+                    step += 1;
+                }
+
+            }
+            /////
+            // if the current step is only move forward or only turn
+            /////
+            else if (step1.matches("fmf.*") || step1.matches("fc.*")) {
+                newInst.add(step1);
+            }
+        }
+
+        // Output grid path, there is another function at the top of this document where you can call this instead
         Object[][] verboseOutput = new Object[verbosePath.size()][4];
         verboseOutput = verbosePath.toArray(verboseOutput);
         globalVerbosePath = verboseOutput;
 
-        for (int i = 0; i < robotInstructions.size(); i++) {
-            String change = "";
-            switch ((String) robotInstructions.get(i)) {
-                case "\\fc0;":
-                case "\\fc1;":
-                case "\\fc2;":
-                case "\\fc3;":
-                    change = "\\ftrf45;";
-                    break;
-                case "\\fc4;":
-                    change = "\\ftrf90;";
-                    break;
-                case "\\fc5;":
-                case "\\fc6;":
-                case "\\fc8;":
-                case "\\fc9;":
-                    change = "\\ftrf135;";
-                    break;
-                case "\\fc10;":
-                case "\\fc11;":
-                    change = "\\ftlf45;";
-                    break;
-                case "\\fc12;":
-                    change = "\\ftlf90;";
-                    break;
-                case "\\fc13;":
-                case "\\fc14;":
-                case "\\fc15;":
-                    change = "\\ftlf45;";
-                    break;
-            }
-            if (change != "") {
-                robotInstructions.set(i, change);
-            }
-
-        }
-
-        Object[] output2 = new Object[robotInstructions.size()];
-        output2 = robotInstructions.toArray(output2);
+        Object[] output2 = new Object[newInst.size()];
+        output2 = newInst.toArray(output2);
 
         return output2;
     }
 
     //vvvvvvvvvvvvvvvvv//
 
-    public static Object[] psuedoDubins2(String configFile) {
-
-        // convert configfile into arena
-        Arena arena = SetupArena.setupArena(configFile);
-
-        // obtain visiting order
-        Object[][] visitingOrder = Prim.prim(arena);
-
-        // output
-        ArrayList<Object[]> verbosePath = new ArrayList<Object[]>();
-        ArrayList<Object> robotInstructions = new ArrayList<Object>();
-
-        // for each item in visiting order
-        for (int step = 0; step < visitingOrder.length - 1; step++) {
-            double sx = ((Number) visitingOrder[step][0]).doubleValue();
-            double sy = ((Number) visitingOrder[step][1]).doubleValue();
-            double syaw = ((Number) visitingOrder[step][2]).doubleValue() * (Math.PI / 180);
-            int sDeg = ((Number) visitingOrder[step][2]).intValue();
-            double ex = ((Number) visitingOrder[step + 1][0]).doubleValue();
-            double ey = ((Number) visitingOrder[step + 1][1]).doubleValue();
-            int eDeg = ((Number) visitingOrder[step + 1][2]).intValue();
-            double eyaw = ((Number) visitingOrder[step + 1][2]).doubleValue() * (Math.PI / 180);
-            int id = ((Number) visitingOrder[step + 1][3]).intValue();
-
-            ///// psuedo dubins /////
-            boolean gotClash = false;
-            double opp = ex - sx;
-            double adj = ey - sy;
-            double startDirection = syaw;
-            double hyp = 0;
-            Object[][] tempDP = DubinsPathDriver.dubinsPathGrid(sx, sy, startDirection, ex, ey, startDirection, 1);
-            if (opp != 0 & adj != 0) {
-                hyp = Math.sqrt(Math.pow(opp, 2) + Math.pow(adj, 2));
-                double theta = Math.abs(Math.toDegrees(Math.atan2(ex - sx, ey - sy))); // base angle
-                startDirection = (ex > sx & ey > sy) ? theta
-                        : (ex < sx & ey > sy) ? 180 - theta : (ex < sx & ey < sy) ? 270 - theta : 360 - theta;
-                tempDP = DubinsPathDriver.dubinsPathGrid(sx, sy, startDirection, ex, ey, startDirection, 1);
-                // clash checking
-                for (Object[] dpStep : tempDP) {
-                    if (arena.entityClash(
-                            new int[] { ((Number) dpStep[0]).intValue(), ((Number) dpStep[1]).intValue() })) {
-                        gotClash = true;
-                        break;
-                    }
-
-                }
-            } else {
-                gotClash = true;
-            }
-
-            if (gotClash == false) {
-
-                verbosePath.add(new Object[] { (int) sx, (int) sy, sDeg, " " });
-                verbosePath.add(new Object[] { (int) sx, (int) sy, startDirection, " " });
-                for (Object[] dpStep : tempDP) {
-                    verbosePath.add(new Object[] { dpStep[0], dpStep[1], dpStep[2], " " });
-                }
-
-                robotInstructions.add(stmConvert(sDeg, startDirection, "OTS"));
-                robotInstructions.add(stmConvert("S", (int) hyp));
-                robotInstructions.add(stmConvert(startDirection, eDeg, "OTS"));
-                robotInstructions.add(String.format("CAP,%s,%s,%s,%s", id, (int) ex, (int) ey, eDeg));
-            } else {
-                // generate a manhattan path that is less efficient but guaranteed to be safe
-                int localInitDeg = ((Number) visitingOrder[step][2]).intValue();
-                Manhattan man2 = new Manhattan();
-                Object[][] pathing = man2.manhattan(arena, (int) Math.round(sx), (int) Math.round(sy),
-                        (int) Math.round(ex), (int) Math.round(ey));
-                ArrayList<Object> tempRobotInst = new ArrayList<Object>();
-
-                boolean previousTurn = false;
-                int forwardCounter = 0;
-                for (int i = 0; i < pathing.length - LOOKAHEAD; i++) {
-                    int startX = (int) pathing[i][0];
-                    int startY = (int) pathing[i][1];
-                    int endX = (int) pathing[i + LOOKAHEAD][0];
-                    int endY = (int) pathing[i + LOOKAHEAD][1];
-                    String output = "";
-
-                    /*
-                    if ((pathing[i][0] == pathing[i + 1][0] & pathing[i + 3][1] == pathing[i + 4][1])
-                            | (pathing[i][1] == pathing[i + 1][1] & pathing[i + 3][0] == pathing[i + 4][0])) { */
-
-                    if (endX > startX & endY > startY) {
-                        // ends up north east
-                        if (localInitDeg == 0) {
-                            output = "\\ftlf90;";
-                            globalInitDeg = 90;
-                        } else if (localInitDeg == 90) {
-                            output = "\\ftrf90;";
-                            globalInitDeg = 0;
-                        }
-                    } else if (endX > startX & endY < startY) {
-                        // southeast
-                        if (localInitDeg == 0) {
-                            output = "\\ftrf90;";
-                            globalInitDeg = 270;
-                        } else if (localInitDeg == 270) {
-                            output = "\\ftlf90;";
-                            globalInitDeg = 0;
-                        }
-
-                    } else if (endX < startX & endY > startY) {
-                        // northw
-                        if (localInitDeg == 180) {
-                            output = "\\ftrf90;";
-                            globalInitDeg = 90;
-                        } else if (localInitDeg == 90) {
-                            output = "\\ftlf90;";
-                            globalInitDeg = 180;
-                        }
-
-                    } else if (endX < startX & endY < startY) {
-                        // move sw
-                        if (localInitDeg == 180) {
-                            output = "\\ftlf90;";
-                            globalInitDeg = 270;
-                        } else if (localInitDeg == 270) {
-                            output = "\\ftrf90;";
-                            globalInitDeg = 180;
-                        }
-                    }
-
-                    if (output == "") {
-                        if (previousTurn) {
-                            previousTurn = false;
-                        } else {
-                            forwardCounter++;
-                        }
-
-                    } else if (output == "" & i == pathing.length - LOOKAHEAD) {
-                        String toAdd = "\\fmf";
-                        robotInstructions.add(toAdd);
-                    } else {
-                        String forward = "\\fmf" + forwardCounter + ";";
-                        forwardCounter = 0;
-                        robotInstructions.add(forward);
-                        robotInstructions.add(output);
-                        previousTurn = true;
-                    }
-
-                    localInitDeg = globalInitDeg;
-                }
-
-                boolean prevIsStr = false;
-                int strCount = 0;
-                for (Object inst : tempRobotInst) {
-                    if (inst == "\\fmf10;" & prevIsStr == false) {
-                        strCount++;
-                        prevIsStr = true;
-                    } else if (inst == "\\fmf10;" & prevIsStr == true) {
-                        strCount++;
-                    } else if (inst != "\\fmf10;" & prevIsStr == true) {
-                        prevIsStr = false;
-                        String toAdd = "\\fmf" + strCount * 10 + ";";
-                        strCount = 0;
-                        robotInstructions.add(toAdd);
-                        robotInstructions.add(inst);
-                    } else {
-                        robotInstructions.add(inst);
-                    }
-                }
-            }
-
+    private static String otsToTurn(int turnValue) {
+        switch (turnValue) {
+            case 0:
+                return "\\fmf0;";
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+                return "\\ftrf" + turnValue * 22 + ";";
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+                return "\\ftlb90;&\\ftrf" + (turnValue - 4) * 22 + ";";
+            case 9:
+            case 10:
+            case 11:
+                return "\\ftrb90;&\\ftlf" + (turnValue - 8) * 22 + ";";
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+                return "\\ftlf" + (16 - turnValue) * 22 + ";";
+            default:
         }
-        // 
-
-        Object[][] verboseOutput = new Object[verbosePath.size()][4];
-        verboseOutput = verbosePath.toArray(verboseOutput);
-        globalVerbosePath = verboseOutput;
-
-        Object[] output2 = new Object[robotInstructions.size()];
-        output2 = robotInstructions.toArray(output2);
-
-        return output2;
+        return null;
     }
 
     private static String stmConvert(String segment, int amount) {

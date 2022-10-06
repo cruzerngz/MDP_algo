@@ -196,25 +196,6 @@ public class AlgoServer {
     }
 
     private void stmHandler(String message) {
-
-        // this one here is strictly for adjustments after poor image capture
-        // take an image -> delay -> move back forward
-        /* 
-        if (message.matches("STM:&.*") & IS_ADJUSTING) {
-            synchronized (socket) {
-                String takePicture = "IMG:CAP";
-                try {
-                    outStream.write(takePicture.getBytes("UTF-8"));
-                    Thread.sleep(500);
-        
-                    //'Thread.sleep(1000);
-                    //Thread.sleep(3000);
-                } catch (Exception e) {
-                }
-            }
-            return;
-        }*/
-
         // after successful robot movement and ack from stm...
         if (message.matches("STM:&.*") & IS_ADJUSTING == false & AFTER_ADJUST == false) {
             // if there are still instructions left, send next instruction
@@ -257,103 +238,97 @@ public class AlgoServer {
                 }
                 instructionCount++;
             }
-        }
-        if (AFTER_ADJUST) {
-            AFTER_ADJUST = false;
-        }
-
-        if (IS_ADJUSTING) {
+        } else if (message.matches("STM:&.*") & IS_ADJUSTING == true & AFTER_ADJUST == false) {
             synchronized (socket) {
+                String toCamera = "IMG:CAP";
                 try {
-                    String toCamera = "IMG:CAP";
-                    String internal = "Capture again";
-                    System.out.println(internal);
-                    Thread.sleep(SLEEPO);
                     outStream.write(toCamera.getBytes("UTF-8"));
-                    //Thread.sleep(5000);
-
+                    Thread.sleep(SLEEPO);
                 } catch (Exception e) {
                 }
             }
-            return;
+        } else if (message.matches("STM:&.*") & AFTER_ADJUST == true) {
+            AFTER_ADJUST = false;
+            if (instructionCount < pathInstructions.length) {
+                String toSTM = "STM:" + (String) pathInstructions[instructionCount];
+                instructionCount++;
+                String internal = String.format(
+                        "Sent image to android\nSend next instructions %s to STM\n\n",
+                        (String) pathInstructions[instructionCount]);
+                synchronized (socket) {
+                    try {
+                        System.out.println(internal);
+                        Thread.sleep(SLEEPO);
+                        outStream.write(toSTM.getBytes("UTF-8"));
+                        //Thread.sleep(3000);
+                    } catch (Exception e) {
+                    }
+                }
+            } else {
+                String toCamera = "IMG:DONE";
+                String internal = "No more instructions send done camera";
+                synchronized (socket) {
+                    try {
+                        System.out.println(internal);
+                        Thread.sleep(SLEEPO);
+                        outStream.write(toCamera.getBytes("UTF-8"));
+                        //Thread.sleep(3000);
+                    } catch (Exception e) {
+                    }
+                }
+            }
         }
-
     }
 
     private void imgHandler(String message) {
         // receive image from camera
         if (message.matches("IMG:CAP:.*")) {
-
             String imageId = "";
             try {
-                // if the image recognition did not get anything, [], escpae the function
-                if (message.matches("IMG:CAP:-1.*") || message.matches("IMG:CAP:-2.*")) {
+                // if the image recognition did not get anything, [], perform readjustment
+                if ((message.matches("IMG:CAP:-1.*") || message.matches("IMG:CAP:-2.*")) & ADJUSTMENT_COUNT < 2) {
                     System.out.println("No image capture. Performing readjustment...\n\n");
-                    if (ADJUSTMENT_COUNT < 2) {
-                        readjustment();
-                        return;
-                    } else {
-                        AFTER_ADJUST = true;
-                        IS_ADJUSTING = false;
-                        synchronized (socket) {
-                            String toSTM = "\\fmf" + BACKWARD_COUNT * 10 + ";";
-                            try {
-                                Thread.sleep(SLEEPO);
-                                outStream.write(toSTM.getBytes("UTF-8"));
-                            } catch (Exception e) {
-                            }
-                        }
-                        ADJUSTMENT_COUNT = 0;
-                        BACKWARD_COUNT = 0;
-
-                        //moveBack();
-                    }
+                    readjustment();
+                    return;
                 } else {
+                    // otherwise...
                     if (IS_ADJUSTING) {
-                        AFTER_ADJUST = true;
                         IS_ADJUSTING = false;
-                        synchronized (socket) {
-                            String toSTM = "\\fmf" + BACKWARD_COUNT * 10 + ";";
-                            try {
-
-                                outStream.write(toSTM.getBytes("UTF-8"));
-                                Thread.sleep(SLEEPO);
-                            } catch (Exception e) {
-                            }
-                        }
                         ADJUSTMENT_COUNT = 0;
-                        BACKWARD_COUNT = 0;
-                    } else {
-                        // otherwise...
+                        AFTER_ADJUST = true;
+
                         imageId = message.substring(8, 10);
                         synchronized (socket) {
                             String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
-
+                            String toSTM = "\\fmf" + BACKWARD_COUNT * 10 + ";";
                             try {
+                                outStream.write(toSTM.getBytes("UTF-8"));
+                                if (message.matches("IMG:CAP:-1.*") || message.matches("IMG:CAP:-2.*")) {
+                                    // do nothing
+                                } else {
+                                    outStream.write(toAndroid.getBytes("UTF-8"));
+                                }
+
+                            } catch (Exception e) {
+                            }
+                        }
+                        BACKWARD_COUNT = 0;
+                        return;
+                    } else {
+                        imageId = message.substring(8, 10);
+                        synchronized (socket) {
+                            String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
+                            try {
+
                                 outStream.write(toAndroid.getBytes("UTF-8"));
                             } catch (Exception e) {
                             }
                         }
                     }
-
                 }
-
-                // String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
-                // outStream.write(toAndroid.getBytes("UTF-8"));
                 System.out.println("Printed imageId " + imageId + "\n\n");
-
             } catch (Exception e) {
             }
-
-            /*
-            synchronized (socket) {
-                String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
-                try {
-                    outStream.write(toAndroid.getBytes("UTF-8"));
-                    //Thread.sleep(3000);
-                } catch (Exception e) {
-                }
-            } */
 
             // after which send next instruction to STM
             if (instructionCount < pathInstructions.length) {
@@ -388,26 +363,16 @@ public class AlgoServer {
     }
 
     private void readjustment() {
+        IS_ADJUSTING = true;
         ADJUSTMENT_COUNT++;
         BACKWARD_COUNT++;
-        IS_ADJUSTING = true;
         synchronized (socket) {
             try {
                 String toSTM = "STM:\\fmb10;";
                 outStream.write(toSTM.getBytes("UTF-8"));
-                //String toCamera = "IMG:CAP";
-                //ystem.out.println("Try capture image again");
-                //Thread.sleep(SLEEPO);
-                //outStream.write(toCamera.getBytes("UTF-8"));
-
-                //Thread.sleep(3000);
             } catch (Exception e) {
             }
         }
-    }
-
-    private void moveBack() {
-
     }
 
     public static void algoServer(String address, int port) {

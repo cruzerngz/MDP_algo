@@ -17,7 +17,7 @@ public class Main {
     int port = 10003;
     int port2 = 5000;
     String address2 = "192.168.43.1";
-    AlgoServer.algoServer(address, port);
+    AlgoServer.algoServer(address2, port2);
 
     //PathPlanner.psuedoDubins2(configFile);
     // System.out.println(Arrays.toString(PathPlanner.psuedoDubins(configFile3)));

@@ -300,7 +300,8 @@ public class PathPlanner {
         // changing on the spot turns to regular turns (must be preceeded by forward/backward movement)
         ArrayList<Object> newInst = new ArrayList<Object>();
         int FORWARD_CORRECT = 70;
-        int REVERSEAMT = 20;
+        int REVERSEAMT = 10;
+        int TURN_CORRECT = 30;
         for (int step = 0; step < robotInstructions.size() - 1; step++) {
             // Determining instruction and extracting values
             String step1 = ((String) robotInstructions.get(step)).substring(1,
@@ -332,13 +333,36 @@ public class PathPlanner {
                     newInst.add("\\fc4;");
                 }
                 step++;
+            } else if (step1.matches("fc4") & step2.matches("fc12")) {
+                newInst.add("-");
+                step++;
             }
             /////
-            // if the current step is obstacle image capture, reverse first
+            // if the current step is OTS, then turn
             /////
-            else if (step1.matches("AP.*") & step2.matches("fc.*")) {
-                newInst.add(robotInstructions.get(step));
-                //newInst.add(String.format("\\fmb%s;", REVERSEAMT));
+            else if (step1.matches("fc.*")
+                    & turnClearance((robotInstructions.get(step + 1)).toString())) {
+                System.out.println(step1 + robotInstructions.get(step + 1).toString());
+                int turnMovingDist = getValue((String) robotInstructions.get(step + 1));
+                newInst.add("\\fmb" + REVERSEAMT + ";");
+                if (step1.matches("fc4")) {
+                    newInst.add("\\ftrf90;");
+                    if (turnMovingDist - TURN_CORRECT == 0) {
+                        newInst.add("-");
+                    } else {
+                        newInst.add("\\fmf" + (turnMovingDist - TURN_CORRECT) + ";");
+                    }
+
+                } else if (step1.matches("fc12")) {
+                    System.out.println(step1);
+                    newInst.add("\\ftlf90;");
+                    if (turnMovingDist - TURN_CORRECT == 0) {
+                        newInst.add("-");
+                    } else {
+                        newInst.add("\\fmf" + (turnMovingDist - TURN_CORRECT) + ";");
+                    }
+                }
+                step++;
             }
             // otherwise
             else {
@@ -347,28 +371,55 @@ public class PathPlanner {
         }
         newInst.add(robotInstructions.get(robotInstructions.size() - 1));
 
+        ArrayList<Object> newInst2 = new ArrayList<Object>();
+        for (int step = 0; step < newInst.size(); step++) {
+            // Determining instruction and extracting values
+            if (((String) newInst.get(step)) == "-") {
+                continue;
+            } else {
+                newInst2.add(newInst.get(step));
+            }
+        }
+
         // Output grid path, there is another function at the top of this document where you can call this instead
         //Object[][] verboseOutput = new Object[verbosePath.size()][4];
         //verboseOutput = verbosePath.toArray(verboseOutput);
         // globalVerbosePath = verboseOutput;
 
-        //Object[] output3 = new Object[robotInstructions.size()];
-        //output3 = robotInstructions.toArray(output3);
+        Object[] output3 = new Object[robotInstructions.size()];
+        output3 = robotInstructions.toArray(output3);
 
-        //System.out.println(Arrays.toString(output3));
+        System.out.println(Arrays.toString(output3) + "\n\n");
 
-        Object[] output2 = new Object[newInst.size()];
-        output2 = newInst.toArray(output2);
+        Object[] output2 = new Object[newInst2.size()];
+        output2 = newInst2.toArray(output2);
 
         return output2;
     }
 
     //vvvvvvvvvvvvvvvvv//
 
+    private static boolean turnClearance(String fullInstruction) {
+        //System.out.println("enter turnclearance");
+        if (fullInstruction.charAt(1) == 'f' & fullInstruction.charAt(2) == 'm' & fullInstruction.charAt(4) >= '3') {
+            //System.out.println(fullInstruction);
+            return true;
+        }
+        return false;
+    }
+
+    private static int getValue(String fullInstruction) {
+        if (fullInstruction.charAt(1) == 'f' & fullInstruction.charAt(2) == 'm') {
+            return Integer.parseInt(fullInstruction.substring(4, fullInstruction.length() - 1));
+        }
+        return -1;
+
+    }
+
     private static String otsToTurn(int turnValue) {
         switch (turnValue) {
             case 0:
-                return "\\fmf0;";
+                return "-";
             case 1:
             case 2:
             case 3:

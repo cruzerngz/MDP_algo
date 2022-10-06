@@ -26,10 +26,8 @@ public class AlgoServer {
     int imageCaptureStep = 1;
     String OBSTACLE_ID = "";
 
-    boolean ADJUSTMENT_FLAG = false;
-    int ADJUSTMENT_FORWARD_COUNT = 0;
-    int ADJUSTMENT_BACKWARD_COUNT = 0;
-    boolean ADJUSTMENT_OUTCOME = false;
+    int ADJUSTMENT_COUNT = 0;
+    boolean IS_ADJUSTING = true;
 
     public AlgoServer(String address, int port) {
         this.address = address;
@@ -196,6 +194,25 @@ public class AlgoServer {
     }
 
     private void stmHandler(String message) {
+
+        // this one here is strictly for adjustments after poor image capture
+        // take an image -> delay -> move back forward
+        /* 
+        if (message.matches("STM:&.*") & IS_ADJUSTING) {
+            synchronized (socket) {
+                String takePicture = "IMG:CAP";
+                try {
+                    outStream.write(takePicture.getBytes("UTF-8"));
+                    Thread.sleep(500);
+        
+                    //'Thread.sleep(1000);
+                    //Thread.sleep(3000);
+                } catch (Exception e) {
+                }
+            }
+            return;
+        }*/
+
         // after successful robot movement and ack from stm...
         if (message.matches("STM:&.*")) {
             // if there are still instructions left, send next instruction
@@ -248,15 +265,26 @@ public class AlgoServer {
             String imageId = "";
             try {
                 // if the image recognition did not get anything, [], escpae the function
-                //if (message.charAt(8) == '[' & message.charAt(9) == ']') {
                 if (message.matches("IMG:CAP:-1.*")) {
                     System.out.println("No image capture. Performing readjustment...\n\n");
-                    //readjustment(-1);
-                    // return;
+                    /*
+                    if (ADJUSTMENT_COUNT < 3) {
+                        readjustment();
+                        return;
+                    } else {
+                        ADJUSTMENT_COUNT = 0;
+                        moveBack();
+                    } */
                 } else if (message.matches("IMG:CAP:-2.*")) {
                     System.out.println("Poor capture. Performing readjustment...\n\n");
-                    //readjustment(-2);
-                    // return;
+                    /*
+                    if (ADJUSTMENT_COUNT < 3) {
+                        readjustment();
+                        return;
+                    } else {
+                        ADJUSTMENT_COUNT = 0;
+                        moveBack();
+                    } */
                 }
 
                 // otherwise...
@@ -318,39 +346,21 @@ public class AlgoServer {
         }
     }
 
-    private void readjustment(int error) {
-        // first time the readjustment function is called
-        if (ADJUSTMENT_FLAG == false) {
-            ADJUSTMENT_FLAG = true;
+    private void readjustment() {
+        ADJUSTMENT_COUNT++;
+        synchronized (socket) {
+            try {
+                String toCamera = "IMG:CAP";
+                System.out.println("Try capture image again");
+                Thread.sleep(SLEEPO);
+                outStream.write(toCamera.getBytes("UTF-8"));
+                //Thread.sleep(3000);
+            } catch (Exception e) {
+            }
         }
-        // when reaDJUSTMENT_FLAG is true and outcome of prior readjustment is bad
-        if (error == -1) { //no image caputred
-            synchronized (socket) {
-                try {
-                    String imageCap = "IMG:CAP";
-                    String moveBack = "STM:\\fmb10;";
-                    Thread.sleep(SLEEPO);
-                    outStream.write(moveBack.getBytes("UTF-8"));
-                    outStream.write(imageCap.getBytes("UTF-8"));
-                    ADJUSTMENT_FORWARD_COUNT++;
-                } catch (Exception e) {
-                }
-            }
-        } else if (error == -2) { //image unclear
-            synchronized (socket) {
-                try {
-                    String imageCap = "IMG:CAP";
-                    String moveForward = "STM:\\fmf10;";
-                    Thread.sleep(SLEEPO);
-                    outStream.write(moveForward.getBytes("UTF-8"));
-                    outStream.write(imageCap.getBytes("UTF-8"));
-                    ADJUSTMENT_BACKWARD_COUNT++;
-                } catch (Exception e) {
-                }
-            }
-        } else if (error == 0) { //reset
+    }
 
-        }
+    private void moveBack() {
 
     }
 

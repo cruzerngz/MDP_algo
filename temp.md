@@ -136,4 +136,29 @@ for (int step = 0; step < robotInstructions.size(); step++) {
                 newInst.add("\\" + step1 + ";");
             }
         }
-````
+```
+
+[\fmf10;, \fc4;, \fmf90;, CAP,6,10,2,0, \fc12;, \fmf20;, \fc4;, \fmf10;, \fc12;, \fmf10;, \fc12;, CAP,3,13,7,180, \fc4;, \fmf10;, \fc4;, \fmf30;, CAP,5,16,9,0, \fc12;, \fmf40;, CAP,4,15,13,90, \fc12;, \fmf60;, \fmf0;, \fmf10;, \fc12;, CAP,2,6,15,270, \fc4;, \fmf40;, \fc4;, CAP,1,1,15,90]
+
+
+[\fmf150;, CAP,1,1,15,90, \fmb20;, \ftrf40;, \fc4;, CAP,2,6,15,270, \fc12;, \fmf60;, CAP,4,12,16,0, \fmb20;, \ftrf40;, \fmf40;, \fc4;, CAP,3,13,7,180, \fc4;, \fmf10;, \fc4;, \fmf30;, CAP,5,16,9,0, \fmb20;, \ftrf40;, \fmf20;, \fc4;, CAP,6,16,2,180]
+
+[\fmf150;, CAP,1,1,15,90, \fmb20;, \ftrf90;, \fc4;, CAP,2,6,15,270, \fc12;, \fmf60;, CAP,4,12,16,0, \fmb20;, \ftrf90;, \fmf40;, \fc4;, CAP,3,13,7,180, \fc4;, \fmf10;, \fc4;, \fmf30;, CAP,5,16,9,0, \fmb20;, \ftrf90;, \fmf20;, \fc4;, CAP,6,16,2,180]
+
+
+
+
+
+
+
+
+[\fmf150;, CAP,1,1,15,90, \fmb20;, \ftrf90;, \fc4;, CAP,2,6,15,270, \fc12;, \fmf60;, CAP,4,12,16,0, \fmb20;, \ftrf90;, \fmf40;, \fc4;, CAP,3,13,7,180, \fc4;, \fmf10;, \fc4;, \fmf30;, CAP,5,16,9,0, \fmb20;, \ftrf90;, \fmf20;, \fc4;, CAP,6,16,2,180]
+
+1 1 90,5 9 270 1,7 14 180 2,12 9 0 3,15 4 180 4,15 15 270 5
+
+\fmf10;, \fmb20;, \ftrf90;, \fmf60;, CAP,6,10,2,0, 
+\fc12;, \fmf20;, \fc4;, \fmf10;, \fc12;, \fmf10;, \fc12;, CAP,3,13,7,180, 
+\fc4;, \fmf10;, \fmb20;, \ftrf90;, CAP,5,16,9,0, 
+\fc12;, \fmf40;, CAP,4,15,13,90, 
+\fmb20;, \ftlf90;, \fmf30;, \fmf10;, \fc12;, CAP,2,6,15,270, 
+\fmb20;, \ftrf90;, \fmf10;, \fc4;, CAP,1,1,15,90

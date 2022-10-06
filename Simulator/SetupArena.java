@@ -114,7 +114,6 @@ public class SetupArena {
                 }
             }
         }
-
         return tempCoords;
     }
 }

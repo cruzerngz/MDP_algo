@@ -17,10 +17,10 @@ public class Main {
     int port = 10003;
     int port2 = 5000;
     String address2 = "192.168.43.1";
-    //AlgoServer.algoServer(address, port);
+    AlgoServer.algoServer(address, port);
 
     //PathPlanner.psuedoDubins2(configFile);
-    System.out.println(Arrays.toString(PathPlanner.psuedoDubins(configFile3)));
+    // System.out.println(Arrays.toString(PathPlanner.psuedoDubins(configFile3)));
     //System.out.println(PathPlanner.gridPath(configFile, true));
     //Simulator3 guiSim = new Simulator3();
     //guiSim.guiSim();

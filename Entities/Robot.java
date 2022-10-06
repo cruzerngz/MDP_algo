@@ -11,6 +11,7 @@ public class Robot extends Entity {
         this.width = width;
         this.height = height;
         this.paddingSize = (int) Math.floor(height / 2);
+        //this.paddingSize = 4;
 
         super.type = Type.ROBOT;
         super.symbol = "#";

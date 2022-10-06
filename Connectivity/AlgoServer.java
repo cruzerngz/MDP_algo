@@ -12,7 +12,7 @@ import java.io.*;
 
 public class AlgoServer {
 
-    private int SLEEPO = 500;
+    private int SLEEPO = 1000;
 
     private Socket socket = null;
     private InputStream inStream = null;
@@ -27,7 +27,9 @@ public class AlgoServer {
     String OBSTACLE_ID = "";
 
     int ADJUSTMENT_COUNT = 0;
-    boolean IS_ADJUSTING = true;
+    boolean IS_ADJUSTING = false;
+    int BACKWARD_COUNT = 0;
+    boolean AFTER_ADJUST = false;
 
     public AlgoServer(String address, int port) {
         this.address = address;
@@ -214,7 +216,7 @@ public class AlgoServer {
         }*/
 
         // after successful robot movement and ack from stm...
-        if (message.matches("STM:&.*")) {
+        if (message.matches("STM:&.*") & IS_ADJUSTING == false & AFTER_ADJUST == false) {
             // if there are still instructions left, send next instruction
             if (instructionCount < pathInstructions.length) {
                 // if next instruction is image capture, ask robot to take picture, and send current coords to android
@@ -256,6 +258,26 @@ public class AlgoServer {
                 instructionCount++;
             }
         }
+        if (AFTER_ADJUST) {
+            AFTER_ADJUST = false;
+        }
+
+        if (IS_ADJUSTING) {
+            synchronized (socket) {
+                try {
+                    String toCamera = "IMG:CAP";
+                    String internal = "Capture again";
+                    System.out.println(internal);
+                    Thread.sleep(SLEEPO);
+                    outStream.write(toCamera.getBytes("UTF-8"));
+                    //Thread.sleep(5000);
+
+                } catch (Exception e) {
+                }
+            }
+            return;
+        }
+
     }
 
     private void imgHandler(String message) {
@@ -265,38 +287,57 @@ public class AlgoServer {
             String imageId = "";
             try {
                 // if the image recognition did not get anything, [], escpae the function
-                if (message.matches("IMG:CAP:-1.*")) {
+                if (message.matches("IMG:CAP:-1.*") || message.matches("IMG:CAP:-2.*")) {
                     System.out.println("No image capture. Performing readjustment...\n\n");
-                    /*
-                    if (ADJUSTMENT_COUNT < 3) {
+                    if (ADJUSTMENT_COUNT < 2) {
                         readjustment();
                         return;
                     } else {
+                        AFTER_ADJUST = true;
+                        IS_ADJUSTING = false;
+                        synchronized (socket) {
+                            String toSTM = "\\fmf" + BACKWARD_COUNT * 10 + ";";
+                            try {
+                                Thread.sleep(SLEEPO);
+                                outStream.write(toSTM.getBytes("UTF-8"));
+                            } catch (Exception e) {
+                            }
+                        }
                         ADJUSTMENT_COUNT = 0;
-                        moveBack();
-                    } */
-                } else if (message.matches("IMG:CAP:-2.*")) {
-                    System.out.println("Poor capture. Performing readjustment...\n\n");
-                    /*
-                    if (ADJUSTMENT_COUNT < 3) {
-                        readjustment();
-                        return;
-                    } else {
-                        ADJUSTMENT_COUNT = 0;
-                        moveBack();
-                    } */
-                }
+                        BACKWARD_COUNT = 0;
 
-                // otherwise...
-                imageId = message.substring(8, 10);
-                synchronized (socket) {
-                    String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
-
-                    try {
-                        outStream.write(toAndroid.getBytes("UTF-8"));
-                    } catch (Exception e) {
+                        //moveBack();
                     }
+                } else {
+                    if (IS_ADJUSTING) {
+                        AFTER_ADJUST = true;
+                        IS_ADJUSTING = false;
+                        synchronized (socket) {
+                            String toSTM = "\\fmf" + BACKWARD_COUNT * 10 + ";";
+                            try {
+
+                                outStream.write(toSTM.getBytes("UTF-8"));
+                                Thread.sleep(SLEEPO);
+                            } catch (Exception e) {
+                            }
+                        }
+                        ADJUSTMENT_COUNT = 0;
+                        BACKWARD_COUNT = 0;
+                    } else {
+                        // otherwise...
+                        imageId = message.substring(8, 10);
+                        synchronized (socket) {
+                            String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
+
+                            try {
+                                outStream.write(toAndroid.getBytes("UTF-8"));
+                            } catch (Exception e) {
+                            }
+                        }
+                    }
+
                 }
+
                 // String toAndroid = String.format("AND:TARGET,%s,%s", OBSTACLE_ID, imageId);
                 // outStream.write(toAndroid.getBytes("UTF-8"));
                 System.out.println("Printed imageId " + imageId + "\n\n");
@@ -348,12 +389,17 @@ public class AlgoServer {
 
     private void readjustment() {
         ADJUSTMENT_COUNT++;
+        BACKWARD_COUNT++;
+        IS_ADJUSTING = true;
         synchronized (socket) {
             try {
-                String toCamera = "IMG:CAP";
-                System.out.println("Try capture image again");
-                Thread.sleep(SLEEPO);
-                outStream.write(toCamera.getBytes("UTF-8"));
+                String toSTM = "STM:\\fmb10;";
+                outStream.write(toSTM.getBytes("UTF-8"));
+                //String toCamera = "IMG:CAP";
+                //ystem.out.println("Try capture image again");
+                //Thread.sleep(SLEEPO);
+                //outStream.write(toCamera.getBytes("UTF-8"));
+
                 //Thread.sleep(3000);
             } catch (Exception e) {
             }

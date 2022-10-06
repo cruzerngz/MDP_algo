@@ -69,16 +69,16 @@ public class Obstacle extends Entity {
 
         switch (direction.getCompass()) {
             case NORTH:
-                safeCoord = new int[] { x, y + offset };
+                this.safeCoord = new int[] { x, y + offset };
                 break;
             case SOUTH:
-                safeCoord = new int[] { x, y - offset };
+                this.safeCoord = new int[] { x, y - offset };
                 break;
             case EAST:
-                safeCoord = new int[] { x + offset, y };
+                this.safeCoord = new int[] { x + offset, y };
                 break;
             case WEST:
-                safeCoord = new int[] { x - offset, y };
+                this.safeCoord = new int[] { x - offset, y };
                 break;
             default:
         }

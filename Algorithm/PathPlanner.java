@@ -381,6 +381,29 @@ public class PathPlanner {
             }
         }
 
+        ArrayList<Object> newInst3 = new ArrayList<Object>();
+        for (int step = 0; step < newInst2.size(); step++) {
+            // Determining instruction and extracting values
+            String step1 = ((String) newInst2.get(step)).substring(1,
+                    ((String) newInst2.get(step)).length() - 1);
+
+            String step2 = "", step3 = "";
+            if (step + 1 < newInst2.size()) {
+                step2 = ((String) newInst2.get(step + 1)).substring(1,
+                        ((String) newInst2.get(step + 1)).length() - 1);
+            }
+            if (step + 2 < newInst2.size()) {
+                step3 = ((String) newInst2.get(step + 2)).substring(1,
+                        ((String) newInst2.get(step + 2)).length() - 1);
+            }
+            if (step1.matches("fc8")) {
+                newInst3.add("\\fc4;");
+                newInst3.add("\\fc4;");
+            } else {
+                newInst3.add(newInst2.get(step));
+            }
+        }
+
         // Output grid path, there is another function at the top of this document where you can call this instead
         //Object[][] verboseOutput = new Object[verbosePath.size()][4];
         //verboseOutput = verbosePath.toArray(verboseOutput);
@@ -389,10 +412,10 @@ public class PathPlanner {
         Object[] output3 = new Object[robotInstructions.size()];
         output3 = robotInstructions.toArray(output3);
 
-        System.out.println(Arrays.toString(output3) + "\n\n");
+        //System.out.println(Arrays.toString(output3) + "\n\n");
 
-        Object[] output2 = new Object[newInst2.size()];
-        output2 = newInst2.toArray(output2);
+        Object[] output2 = new Object[newInst3.size()];
+        output2 = newInst3.toArray(output2);
 
         return output2;
     }

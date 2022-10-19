@@ -174,7 +174,6 @@ public class Simulator3 {
     private void setupArena() {
         arena = SetupArena.setupArena(textArea.getText());
         path = PathPlanner.gridPath(textArea.getText(), true);
-        // System.out.println(Arrays.deepToString(path));
     }
 
     // translates the obstacles in arena into GUI

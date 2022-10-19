@@ -404,15 +404,12 @@ public class PathPlanner {
             }
         }
 
-        // Output grid path, there is another function at the top of this document where you can call this instead
-        //Object[][] verboseOutput = new Object[verbosePath.size()][4];
-        //verboseOutput = verbosePath.toArray(verboseOutput);
-        // globalVerbosePath = verboseOutput;
+        Object[][] verboseOutput = new Object[verbosePath.size()][4];
+        verboseOutput = verbosePath.toArray(verboseOutput);
+        globalVerbosePath = verboseOutput;
 
         Object[] output3 = new Object[robotInstructions.size()];
         output3 = robotInstructions.toArray(output3);
-
-        //System.out.println(Arrays.toString(output3) + "\n\n");
 
         Object[] output2 = new Object[newInst3.size()];
         output2 = newInst3.toArray(output2);
